@@ -1,738 +1,582 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>SPATIAL MESH · Dossier de identidad para IA regenerativa</title>
-
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
-
-<style>
-  :root{
-    --ink:#080b11; --panel:#0e131c; --panel-2:#131a26;
-    --hair:#1d2735; --hair-soft:#161e2a;
-    --txt:#c8d4e2; --txt-dim:#62748a; --txt-faint:#3c4a5c;
-    --teal:#34e0c4; --teal-soft:#1c7e72;
-    --coral:#ff6b5e; --amber:#f5b14c; --violet:#8b7bff;
-    --good:#34e0c4; --warn:#f5b14c; --bad:#ff6b5e;
-    --r:10px;
-    --mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,Consolas,monospace;
-    --disp:'Space Grotesk',system-ui,-apple-system,sans-serif;
-  }
-  *{ box-sizing:border-box; margin:0; padding:0; }
-  html,body{ height:100%; }
-  body{
-    background:
-      radial-gradient(1200px 700px at 18% -10%, #0d1726 0%, transparent 60%),
-      radial-gradient(900px 600px at 120% 120%, #120e1f 0%, transparent 55%),
-      var(--ink);
-    color:var(--txt); font-family:var(--disp); font-size:15px; line-height:1.45;
-    -webkit-font-smoothing:antialiased; min-height:100%;
-  }
-  body::before{
-    content:""; position:fixed; inset:0; pointer-events:none; opacity:.5;
-    background-image:
-      linear-gradient(var(--hair-soft) 1px, transparent 1px),
-      linear-gradient(90deg, var(--hair-soft) 1px, transparent 1px);
-    background-size:46px 46px;
-    mask-image:radial-gradient(1100px 800px at 50% 20%, #000 35%, transparent 85%);
-  }
-
-  /* ---- topbar ---- */
-  .topbar{ display:flex; align-items:center; gap:18px; padding:14px 22px;
-    border-bottom:1px solid var(--hair);
-    background:linear-gradient(180deg, rgba(19,26,38,.7), rgba(8,11,17,.2));
-    backdrop-filter:blur(6px); position:sticky; top:0; z-index:20; }
-  .brand{ display:flex; align-items:baseline; gap:12px; }
-  .brand .mark{ font-family:var(--mono); font-weight:700; letter-spacing:.18em;
-    font-size:13px; color:var(--teal); border:1px solid var(--teal-soft); border-radius:6px;
-    padding:4px 8px; box-shadow:inset 0 0 18px rgba(52,224,196,.08); }
-  .brand h1{ font-size:15px; font-weight:500; letter-spacing:.04em; }
-  .brand h1 span{ color:var(--txt-dim); }
-  .topbar .spacer{ flex:1; }
-  .status{ display:flex; align-items:center; gap:9px; font-family:var(--mono);
-    font-size:11.5px; letter-spacing:.08em; color:var(--txt-dim); text-transform:uppercase;
-    border:1px solid var(--hair); border-radius:999px; padding:6px 13px 6px 11px; background:var(--panel); }
-  .led{ width:8px; height:8px; border-radius:50%; background:var(--txt-faint); transition:.2s; }
-  .led.loading{ background:var(--amber); animation:pulse 1s infinite; }
-  .led.ready{ background:var(--teal); box-shadow:0 0 10px var(--teal); }
-  .led.lock{ background:var(--teal); box-shadow:0 0 12px var(--teal); }
-  .led.nofind{ background:var(--coral); box-shadow:0 0 10px var(--coral); }
-  @keyframes pulse{ 0%,100%{opacity:1} 50%{opacity:.25} }
-
-  .wrap{ max-width:1500px; margin:0 auto; padding:18px 22px 30px; display:flex; flex-direction:column; gap:18px; }
-
-  /* ---- cards ---- */
-  .card{ background:var(--panel); border:1px solid var(--hair); border-radius:var(--r); overflow:hidden; }
-  .card-head{ display:flex; align-items:center; gap:10px; padding:12px 16px; border-bottom:1px solid var(--hair); }
-  .card-head .num{ font-family:var(--mono); font-size:11px; color:var(--teal);
-    border:1px solid var(--teal-soft); border-radius:5px; padding:2px 6px; }
-  .card-head h2{ font-size:13.5px; font-weight:500; letter-spacing:.03em; }
-  .card-head .hint{ margin-left:auto; font-family:var(--mono); font-size:10.5px; color:var(--txt-faint); letter-spacing:.05em; }
-
-  .btn{ font-family:var(--mono); font-size:11.5px; letter-spacing:.06em; color:var(--txt);
-    background:var(--panel-2); border:1px solid var(--hair); border-radius:7px; padding:8px 12px;
-    cursor:pointer; transition:.15s; display:inline-flex; align-items:center; gap:7px; }
-  .btn:hover{ border-color:var(--teal-soft); color:var(--teal); }
-  .btn:active{ transform:translateY(1px); }
-  .btn:focus-visible{ outline:2px solid var(--teal); outline-offset:2px; }
-  .btn.primary{ background:var(--teal-soft); border-color:var(--teal); color:#04140f; font-weight:700; }
-  .btn.primary:hover{ filter:brightness(1.12); color:#04140f; }
-  .btn.live[data-on="true"]{ border-color:var(--coral); color:var(--coral); }
-  .btn[disabled]{ opacity:.4; cursor:not-allowed; }
-
-  /* ---- bahías de captura ---- */
-  .bays-head{ display:flex; align-items:center; gap:14px; padding:12px 16px; border-bottom:1px solid var(--hair); flex-wrap:wrap; }
-  .bays-head .eyebrow{ font-family:var(--mono); font-size:11px; letter-spacing:.16em; color:var(--txt-dim); text-transform:uppercase; }
-  .bays-head .progress{ margin-left:auto; display:flex; align-items:center; gap:10px; font-family:var(--mono); font-size:11px; color:var(--txt-dim); }
-  .pbar{ width:120px; height:5px; border-radius:3px; background:var(--hair-soft); overflow:hidden; }
-  .pbar > span{ display:block; height:100%; width:0; background:var(--teal); transition:width .25s; }
-
-  .bay-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(146px,1fr)); gap:12px; padding:14px 16px; }
-  .bay{ position:relative; border:1.4px dashed var(--hair); border-radius:9px; background:var(--ink);
-    aspect-ratio:3/4; cursor:pointer; overflow:hidden; transition:.15s; display:flex; }
-  .bay:hover{ border-color:var(--teal-soft); }
-  .bay.hot{ border-color:var(--teal); background:rgba(52,224,196,.06); }
-  .bay.required{ border-style:solid; border-color:var(--coral); }
-  .bay.required.filled{ border-color:var(--teal); }
-  .bay.active{ box-shadow:0 0 0 2px var(--teal) inset; }
-  .bay.filled{ border-style:solid; }
-  .bay img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
-  .bay .meta{ position:relative; z-index:2; margin-top:auto; width:100%;
-    padding:8px 9px; background:linear-gradient(180deg, transparent, rgba(8,11,17,.92) 55%); }
-  .bay .lab{ font-size:12px; line-height:1.2; color:var(--txt); }
-  .bay .hnt{ font-family:var(--mono); font-size:9.5px; color:var(--txt-faint); letter-spacing:.02em; margin-top:2px; }
-  .bay .req-tag{ position:absolute; top:6px; left:6px; z-index:3; font-family:var(--mono);
-    font-size:8.5px; letter-spacing:.1em; color:#1a0a08; background:var(--coral); border-radius:4px; padding:2px 5px; }
-  .bay.filled .req-tag{ background:var(--teal); color:#04140f; }
-  .bay .ok{ position:absolute; top:6px; right:6px; z-index:3; width:18px; height:18px; border-radius:50%;
-    background:var(--teal); color:#04140f; font-size:11px; display:none; align-items:center; justify-content:center; }
-  .bay.filled .ok{ display:flex; }
-  .bay .rm{ position:absolute; top:6px; right:6px; z-index:4; width:18px; height:18px; border-radius:50%;
-    background:rgba(8,11,17,.85); color:var(--coral); border:1px solid var(--hair); font-size:12px;
-    display:none; align-items:center; justify-content:center; cursor:pointer; }
-  .bay.filled:hover .rm{ display:flex; } .bay.filled:hover .ok{ display:none; }
-  .bay .plus{ margin:auto; color:var(--txt-faint); font-size:26px; font-weight:300; }
-  .bay.filled .plus{ display:none; }
-
-  /* ---- layout principal ---- */
-  .layout{ display:grid; grid-template-columns:minmax(0,1.45fr) minmax(360px,1fr); gap:18px; }
-  @media (max-width:980px){ .layout{ grid-template-columns:1fr; } }
-
-  .stage-head{ display:flex; align-items:center; gap:10px; padding:12px 16px; border-bottom:1px solid var(--hair); flex-wrap:wrap; }
-  .stage-head .eyebrow{ font-family:var(--mono); font-size:11px; letter-spacing:.16em; color:var(--txt-dim); text-transform:uppercase; }
-  .stage-head .spacer{ flex:1; }
-  .canvas-wrap{ position:relative; min-height:360px; display:flex; align-items:center; justify-content:center; padding:16px;
-    background:
-      repeating-linear-gradient(0deg, transparent 0 45px, var(--hair-soft) 45px 46px),
-      repeating-linear-gradient(90deg, transparent 0 45px, var(--hair-soft) 45px 46px), var(--ink); }
-  canvas#stage{ max-width:100%; max-height:62vh; border-radius:6px; display:none; box-shadow:0 18px 60px rgba(0,0,0,.55); }
-  .idle{ text-align:center; color:var(--txt-faint); font-family:var(--mono); font-size:12px; letter-spacing:.04em; line-height:1.8; }
-  .idle b{ color:var(--txt-dim); font-weight:500; }
-  .legend{ display:flex; flex-wrap:wrap; gap:14px; padding:11px 16px; border-top:1px solid var(--hair);
-    font-family:var(--mono); font-size:11px; color:var(--txt-dim); }
-  .legend i{ display:inline-block; width:18px; height:0; border-top:2px solid; margin-right:6px; vertical-align:middle; }
-  .lg-base i{ border-color:var(--coral); } .lg-meas i{ border-color:var(--teal); }
-  .lg-axis i{ border-color:var(--violet); border-top-style:dashed; } .lg-pts i{ border-color:var(--txt-faint); }
-
-  /* ---- side ---- */
-  .side{ display:flex; flex-direction:column; gap:18px; }
-
-  .metrics{ padding:6px 8px 10px; }
-  .metric{ display:grid; grid-template-columns:1fr auto; align-items:center; gap:4px 10px; padding:8px; border-radius:7px; }
-  .metric:nth-child(odd){ background:rgba(255,255,255,.012); }
-  .metric .name{ font-family:var(--mono); font-size:11.5px; color:var(--txt-dim); letter-spacing:.04em; }
-  .metric .val{ font-family:var(--mono); font-size:13px; color:var(--txt); font-weight:500; text-align:right; }
-  .metric .val.base{ color:var(--coral); }
-  .metric .bar{ grid-column:1/-1; height:3px; border-radius:2px; background:var(--hair-soft); overflow:hidden; margin-top:2px; }
-  .metric .bar > span{ display:block; height:100%; background:var(--teal); width:0; transition:width .25s; }
-  .metric.is-base .bar > span{ background:var(--coral); }
-  .metric-empty{ padding:26px 16px; text-align:center; color:var(--txt-faint); font-family:var(--mono); font-size:11.5px; }
-  .integrity{ display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:12px 16px; border-top:1px solid var(--hair); }
-  .gauge{ background:var(--panel-2); border:1px solid var(--hair); border-radius:8px; padding:10px 12px; }
-  .gauge .k{ font-family:var(--mono); font-size:10px; letter-spacing:.1em; color:var(--txt-faint); text-transform:uppercase; }
-  .gauge .v{ font-family:var(--mono); font-size:20px; font-weight:700; margin-top:3px; }
-  .gauge .v.good{ color:var(--good); } .gauge .v.warn{ color:var(--warn); } .gauge .v.bad{ color:var(--bad); }
-
-  /* ---- formularios ---- */
-  .form{ padding:12px 16px 16px; display:grid; grid-template-columns:1fr 1fr; gap:11px; }
-  .form .full{ grid-column:1/-1; }
-  .field label{ display:block; font-family:var(--mono); font-size:10px; letter-spacing:.1em; color:var(--txt-faint);
-    text-transform:uppercase; margin-bottom:5px; }
-  .field input, .field select, .field textarea{
-    width:100%; background:var(--ink); border:1px solid var(--hair); border-radius:7px; color:var(--txt);
-    font-family:var(--disp); font-size:13px; padding:9px 10px; }
-  .field input:focus, .field select:focus, .field textarea:focus{ outline:none; border-color:var(--teal-soft); }
-  .field textarea{ resize:vertical; min-height:54px; font-family:var(--mono); font-size:12px; }
-
-  .exclude{ padding:0 16px 16px; }
-  .exclude .sublbl{ font-family:var(--mono); font-size:10px; letter-spacing:.1em; color:var(--txt-faint);
-    text-transform:uppercase; margin:4px 0 9px; }
-  .chips{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:11px; }
-  .chip{ font-family:var(--mono); font-size:11.5px; color:var(--txt-dim); background:var(--ink);
-    border:1px solid var(--hair); border-radius:999px; padding:6px 12px; cursor:pointer; transition:.12s; user-select:none; }
-  .chip:hover{ border-color:var(--teal-soft); }
-  .chip[aria-pressed="true"]{ color:#1a0a08; background:var(--coral); border-color:var(--coral); }
-
-  /* ---- código / textareas ---- */
-  .code-wrap{ padding:12px 14px 14px; }
-  textarea.code{ width:100%; font-family:var(--mono); font-size:12px; line-height:1.55;
-    background:var(--ink); border:1px solid var(--hair); border-radius:8px; padding:14px; letter-spacing:.02em; }
-  textarea#spatial{ height:240px; color:var(--amber); caret-color:var(--teal); }
-  textarea#package{ height:300px; color:var(--teal); }
-  textarea.code:focus{ outline:none; border-color:var(--teal-soft); }
-  .actions{ display:flex; gap:10px; margin-top:10px; flex-wrap:wrap; align-items:center; }
-  .toast{ font-family:var(--mono); font-size:11px; color:var(--teal); opacity:0; transition:.2s; }
-  .toast.show{ opacity:1; }
-
-  .recon{ display:flex; gap:14px; padding:0 16px 16px; align-items:flex-start; }
-  .recon canvas{ background:
-      repeating-linear-gradient(0deg, transparent 0 19px, var(--hair-soft) 19px 20px),
-      repeating-linear-gradient(90deg, transparent 0 19px, var(--hair-soft) 19px 20px), var(--ink);
-    border:1px solid var(--hair); border-radius:8px; flex:0 0 auto; }
-  .recon .note{ font-family:var(--mono); font-size:11px; line-height:1.7; color:var(--txt-dim); }
-  .recon .note b{ color:var(--teal); font-weight:500; }
-  .recon .note .warnline{ color:var(--amber); }
-
-  .foot{ font-family:var(--mono); font-size:11px; color:var(--txt-faint); text-align:center; letter-spacing:.04em; }
-  .foot b{ color:var(--txt-dim); font-weight:500; }
-
-  @media (prefers-reduced-motion: reduce){ *{ animation:none!important; transition:none!important; } }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Identity Dossier Builder · IA regenerativa</title>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" crossorigin="anonymous"></script>
+  <style>
+    :root{
+      --bg:#070a10; --bg2:#0b111b; --panel:#101826; --panel2:#151f31; --line:#243247;
+      --text:#d8e3f1; --muted:#8a9ab0; --faint:#5b6a80; --good:#38e6b5; --warn:#ffbf5b;
+      --bad:#ff6b6b; --accent:#7c8cff; --cyan:#44d6ff; --radius:16px;
+      --mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+      --sans:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:radial-gradient(1000px 600px at 18% -10%,rgba(124,140,255,.19),transparent 55%),radial-gradient(900px 600px at 95% 10%,rgba(68,214,255,.10),transparent 50%),var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh}
+    body:before{content:"";position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:42px 42px;mask-image:radial-gradient(circle at 50% 10%,#000 10%,transparent 70%)}
+    header{position:sticky;top:0;z-index:20;background:rgba(7,10,16,.78);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+    .bar{max-width:1540px;margin:auto;display:flex;align-items:center;gap:18px;padding:14px 18px}
+    .brand{display:flex;align-items:center;gap:12px;min-width:0}.mark{font-family:var(--mono);font-size:12px;letter-spacing:.16em;color:#07100d;background:linear-gradient(135deg,var(--good),var(--cyan));padding:7px 10px;border-radius:999px;font-weight:800}.brand h1{font-size:16px;margin:0;line-height:1.1}.brand small{display:block;color:var(--muted);font-weight:500;margin-top:3px}.status{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:8px 12px;background:var(--bg2);display:flex;align-items:center;gap:8px}.dot{width:8px;height:8px;border-radius:50%;background:var(--warn);box-shadow:0 0 14px var(--warn)}.dot.ready{background:var(--good);box-shadow:0 0 14px var(--good)}.dot.fail{background:var(--bad);box-shadow:0 0 14px var(--bad)}
+    main{max-width:1540px;margin:auto;padding:18px;display:grid;grid-template-columns:390px minmax(0,1fr);gap:18px}@media(max-width:1050px){main{grid-template-columns:1fr}}
+    .card{background:linear-gradient(180deg,rgba(16,24,38,.96),rgba(11,17,27,.96));border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 22px 80px rgba(0,0,0,.25);overflow:hidden}.head{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}.head b{font-size:14px}.head span{margin-left:auto;color:var(--faint);font-family:var(--mono);font-size:11px}.body{padding:16px}.stack{display:flex;flex-direction:column;gap:14px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:11px;padding:10px 13px;cursor:pointer;font:700 12px var(--mono);letter-spacing:.04em;transition:.16s}.btn:hover{border-color:var(--cyan);color:var(--cyan)}.btn.primary{background:linear-gradient(135deg,var(--good),var(--cyan));color:#051011;border-color:transparent}.btn.warn{border-color:rgba(255,191,91,.35);color:var(--warn)}.btn:disabled{opacity:.45;cursor:not-allowed}
+    .drop{border:1.5px dashed #3a4d68;background:rgba(68,214,255,.045);border-radius:16px;min-height:172px;display:flex;align-items:center;justify-content:center;text-align:center;padding:22px;cursor:pointer}.drop.hot{border-color:var(--good);background:rgba(56,230,181,.08)}.drop h2{margin:0 0 7px;font-size:20px}.drop p{margin:0;color:var(--muted);line-height:1.45}.drop code{color:var(--cyan);font-family:var(--mono)}
+    .field label{display:block;font:700 10px var(--mono);letter-spacing:.12em;color:var(--faint);text-transform:uppercase;margin-bottom:7px}.field input,.field textarea,.field select{width:100%;border:1px solid var(--line);background:#080d15;color:var(--text);border-radius:11px;padding:10px 11px;font:14px var(--sans)}.field textarea{min-height:74px;resize:vertical;font-family:var(--sans)}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.metric{border:1px solid var(--line);background:#090f18;border-radius:14px;padding:11px}.metric .k{font:700 10px var(--mono);color:var(--faint);letter-spacing:.1em;text-transform:uppercase}.metric .v{font:800 22px var(--mono);margin-top:5px}.metric .v.good{color:var(--good)}.metric .v.warn{color:var(--warn)}.metric .v.bad{color:var(--bad)}
+    .roles{display:grid;grid-template-columns:1fr;gap:9px}.roleline{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:10px;background:#080d15}.roleline strong{font-size:13px}.roleline small{display:block;color:var(--faint);font-family:var(--mono);font-size:10px;margin-top:2px}.pill{font:800 11px var(--mono);border-radius:999px;padding:5px 8px;color:#06100d;background:var(--good)}.pill.empty{background:#263247;color:var(--muted)}
+    .galleryTop{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.galleryTop .search{margin-left:auto;min-width:210px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(212px,1fr));gap:14px;padding:16px}.photo{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#080d15}.thumb{position:relative;aspect-ratio:4/5;background:#05070c;display:flex;align-items:center;justify-content:center}.thumb img{width:100%;height:100%;object-fit:cover}.badge{position:absolute;top:9px;left:9px;font:800 11px var(--mono);border-radius:999px;padding:6px 8px;background:rgba(7,10,16,.82);backdrop-filter:blur(4px)}.badge.good{color:var(--good);border:1px solid rgba(56,230,181,.35)}.badge.warn{color:var(--warn);border:1px solid rgba(255,191,91,.35)}.badge.bad{color:var(--bad);border:1px solid rgba(255,107,107,.35)}.angle{position:absolute;right:9px;top:9px;font:800 10px var(--mono);color:var(--text);background:rgba(7,10,16,.82);border:1px solid var(--line);border-radius:999px;padding:6px 8px}.photoBody{padding:11px}.photoBody .name{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:9px}.facts{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:9px 0}.fact{border:1px solid rgba(255,255,255,.05);border-radius:9px;padding:6px;background:rgba(255,255,255,.025)}.fact kbd{font:700 9px var(--mono);color:var(--faint);display:block;text-transform:uppercase}.fact span{font:800 12px var(--mono)}.photo select{margin-top:8px}.linkbtn{background:transparent;border:0;color:var(--cyan);font:700 12px var(--mono);cursor:pointer;padding:7px 0}.danger{color:var(--bad)}
+    .workspace{display:grid;grid-template-columns:minmax(0,1.2fr) 420px;gap:18px}@media(max-width:1200px){.workspace{grid-template-columns:1fr}}
+    .preview{min-height:420px;position:relative;background:repeating-linear-gradient(0deg,transparent 0 34px,rgba(255,255,255,.025) 34px 35px),repeating-linear-gradient(90deg,transparent 0 34px,rgba(255,255,255,.025) 34px 35px),#070b12;display:flex;align-items:center;justify-content:center}.preview canvas{max-width:100%;max-height:70vh;display:block}.empty{text-align:center;color:var(--faint);font-family:var(--mono);line-height:1.7;padding:30px}.tabs{display:flex;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}.tab{font:800 11px var(--mono);letter-spacing:.05em;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:8px 10px;cursor:pointer;background:#080d15}.tab.active{color:#06100d;background:var(--good);border-color:transparent}.code{width:100%;min-height:270px;border:1px solid var(--line);background:#060a10;color:#b9ffe7;border-radius:14px;padding:14px;font:12px/1.55 var(--mono);resize:vertical}.smallnote{font-size:12px;color:var(--muted);line-height:1.5}.warnbox{border:1px solid rgba(255,191,91,.35);background:rgba(255,191,91,.07);border-radius:14px;padding:12px;color:#ffe0ad;font-size:13px;line-height:1.55}.footnote{font-size:11px;color:var(--faint);line-height:1.45}.progress{height:7px;background:#080d15;border:1px solid var(--line);border-radius:999px;overflow:hidden}.progress span{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--good),var(--cyan));transition:.18s}.hidden{display:none!important}.refActions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.miniList{display:flex;flex-direction:column;gap:8px;max-height:280px;overflow:auto}.mini{display:grid;grid-template-columns:44px 1fr;gap:9px;align-items:center;border:1px solid var(--line);background:#080d15;border-radius:12px;padding:7px}.mini img{width:44px;height:54px;object-fit:cover;border-radius:8px}.mini strong{font-size:12px}.mini small{display:block;color:var(--faint);font-family:var(--mono);font-size:10px;margin-top:2px}
+  </style>
 </head>
-
 <body>
-  <header class="topbar">
+<header>
+  <div class="bar">
     <div class="brand">
-      <span class="mark">◇ SM·V1</span>
-      <h1>Spatial Mesh <span>— dossier de identidad para IA regenerativa</span></h1>
+      <div class="mark">ID·DOSSIER</div>
+      <h1>Identity Dossier Builder <small>paquete visual para recreación consistente con IA</small></h1>
     </div>
-    <div class="spacer"></div>
-    <div class="status"><span class="led loading" id="led"></span><span id="statusText">cargando modelo…</span></div>
-  </header>
+    <div class="status"><span class="dot" id="modelDot"></span><span id="modelStatus">cargando modelos…</span></div>
+  </div>
+</header>
 
-  <div class="wrap">
-
-    <!-- ===== BAHÍAS DE CAPTURA ===== -->
+<main>
+  <aside class="stack">
     <section class="card">
-      <div class="bays-head">
-        <span class="eyebrow">SECUENCIA DE CAPTURA</span>
-        <div class="progress">
-          <span id="progressTxt">0 / 7</span>
-          <span class="pbar"><span id="progressBar"></span></span>
-        </div>
-      </div>
-      <div class="bay-grid" id="bayGrid"><!-- generado por JS --></div>
-    </section>
-
-    <!-- ===== STAGE + PANEL ===== -->
-    <div class="layout">
-
-      <section class="card">
-        <div class="stage-head">
-          <span class="eyebrow">PREVISUALIZACIÓN</span>
-          <span class="spacer"></span>
-          <button class="btn live" id="btnCam" type="button" data-on="false">● cámara</button>
-          <button class="btn" id="btnSnap" type="button" disabled>📸 capturar a la bahía activa</button>
-        </div>
-        <div class="canvas-wrap">
-          <canvas id="stage"></canvas>
-          <div class="idle" id="idle">
-            <b>Selecciona una bahía arriba y sube su foto.</b><br>
-            La <span style="color:var(--coral)">Frontal neutro</span> define la geometría de identidad.<br>
-            El resto son referencias de volumen, expresión, cuerpo y peinado.
+      <div class="head"><b>01 · Cargar fotos</b><span>20–60 ideal</span></div>
+      <div class="body stack">
+        <div class="drop" id="drop">
+          <div>
+            <h2>Arrastrá muchas fotos acá</h2>
+            <p>Frontal, sonrisa, 3/4, perfiles, cuerpo completo, pelo y fotos naturales.<br><code>Todo se procesa en tu navegador.</code></p>
           </div>
         </div>
-        <div class="legend">
-          <span class="lg-base"><i></i>unidad base (interocular)</span>
-          <span class="lg-meas"><i></i>distancias</span>
-          <span class="lg-axis"><i></i>eje de simetría</span>
-          <span class="lg-pts"><i></i>malla 468</span>
+        <input type="file" id="fileInput" accept="image/*" multiple hidden>
+        <div class="row">
+          <button class="btn primary" id="pickBtn">＋ elegir fotos</button>
+          <button class="btn" id="clearBtn">limpiar</button>
+        </div>
+        <div class="progress"><span id="progressBar"></span></div>
+        <div class="footnote" id="progressText">Sin fotos cargadas.</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="head"><b>02 · Datos manuales</b><span>mejoran el prompt</span></div>
+      <div class="body stack">
+        <div class="two">
+          <div class="field"><label>Ojos</label><input id="eyes" placeholder="marrón claro"></div>
+          <div class="field"><label>Piel</label><input id="skin" placeholder="oliva medio"></div>
+          <div class="field"><label>Pelo color</label><input id="hairColor" placeholder="castaño oscuro"></div>
+          <div class="field"><label>Pelo estilo</label><input id="hairStyle" placeholder="corto, fade, tupé"></div>
+          <div class="field"><label>Vello facial</label><input id="beard" placeholder="barba corta / afeitado"></div>
+          <div class="field"><label>Altura / cuerpo</label><input id="build" placeholder="1.76, atlético"></div>
+        </div>
+        <div class="field"><label>Rasgos distintivos</label><textarea id="marks" placeholder="mandíbula, cejas, nariz, sonrisa, lunares, cicatrices, etc."></textarea></div>
+        <div class="field"><label>Excluir</label><textarea id="exclude" placeholder="ropa puntual, gorra, lentes, fondo, sombras duras, accesorios..."></textarea></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="head"><b>03 · Estado del dossier</b><span>auto</span></div>
+      <div class="body stack">
+        <div class="metrics">
+          <div class="metric"><div class="k">Fotos</div><div class="v" id="mPhotos">0</div></div>
+          <div class="metric"><div class="k">Buenas</div><div class="v" id="mGood">0</div></div>
+          <div class="metric"><div class="k">Refs</div><div class="v" id="mRefs">0/9</div></div>
+        </div>
+        <div class="roles" id="roles"></div>
+        <button class="btn warn" id="autoAssignBtn">⚙ auto asignar mejores referencias</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="head"><b>04 · Exportar</b><span>ZIP</span></div>
+      <div class="body stack">
+        <button class="btn primary" id="zipBtn">⬇ descargar identity_dossier.zip</button>
+        <button class="btn" id="contactBtn">⬇ descargar contact_sheet.png</button>
+        <button class="btn" id="promptBtn">⧉ copiar prompt</button>
+        <div class="warnbox">Esto mejora muchísimo la consistencia, pero ninguna IA garantiza copia perfecta. Para máximo parecido, el prompt debe ir acompañado por las imágenes del ZIP.</div>
+      </div>
+    </section>
+  </aside>
+
+  <section class="stack">
+    <div class="workspace">
+      <section class="card">
+        <div class="head"><b>Previsualización / landmarks</b><span id="selectedName">ninguna foto</span></div>
+        <div class="preview" id="previewWrap">
+          <canvas id="previewCanvas" class="hidden"></canvas>
+          <div class="empty" id="emptyPreview">Seleccioná una foto de la galería para ver landmarks faciales/corporales y control visual.</div>
         </div>
       </section>
 
-      <aside class="side">
-
-        <!-- 01 métricas -->
-        <div class="card">
-          <div class="card-head"><span class="num">01</span><h2>Geometría de identidad</h2><span class="hint">de la frontal neutro</span></div>
-          <div class="metrics" id="metrics"><div class="metric-empty">Aún sin frontal neutro analizada.</div></div>
-          <div class="integrity">
-            <div class="gauge"><div class="k">Simetría</div><div class="v" id="gSym">—</div></div>
-            <div class="gauge"><div class="k">Inclinación cantal</div><div class="v" id="gTilt">—</div></div>
-          </div>
+      <section class="card">
+        <div class="tabs">
+          <button class="tab active" data-tab="prompt">PROMPT</button>
+          <button class="tab" data-tab="report">REPORTE</button>
+          <button class="tab" data-tab="refs">REFERENCIAS</button>
         </div>
-
-        <!-- 02 atributos + exclusiones -->
-        <div class="card">
-          <div class="card-head"><span class="num">02</span><h2>Atributos y detalles</h2><span class="hint">opcional pero recomendado</span></div>
-          <div class="form">
-            <div class="field"><label>Color de ojos</label><input id="a_eyes" placeholder="marrón claro"></div>
-            <div class="field"><label>Tono de piel</label><input id="a_skin" placeholder="oliva medio"></div>
-            <div class="field"><label>Pelo · color</label><input id="a_haircol" placeholder="castaño oscuro"></div>
-            <div class="field"><label>Pelo · corte/estilo</label><input id="a_hairstyle" placeholder="fade + tupé"></div>
-            <div class="field"><label>Vello facial</label><input id="a_beard" placeholder="barba corta"></div>
-            <div class="field"><label>Edad aprox.</label><input id="a_age" placeholder="30"></div>
-            <div class="field"><label>Gafas</label>
-              <select id="a_glasses"><option value="">—</option><option>sí</option><option>no</option></select>
-            </div>
-            <div class="field"><label>Complexión</label><input id="a_build" placeholder="atlético"></div>
-            <div class="field full"><label>Rasgos distintivos</label>
-              <textarea id="a_marks" placeholder="lunar bajo el ojo izq., entradas marcadas, cicatriz en ceja…"></textarea></div>
-          </div>
-          <div class="exclude">
-            <div class="sublbl">Detalles a EXCLUIR en la regeneración (toca para marcar)</div>
-            <div class="chips" id="excludeChips"></div>
-            <div class="field full"><label>Otros a excluir</label>
-              <input id="excludeOther" placeholder="cadena, audífonos, gorra…"></div>
-          </div>
+        <div class="body stack" id="panelPrompt">
+          <textarea class="code" id="promptOut" spellcheck="false"></textarea>
+          <div class="row"><button class="btn" id="regenPromptBtn">↻ regenerar prompt</button></div>
+          <p class="smallnote">Este prompt está pensado para pegarlo acá junto al ZIP o las imágenes principales. Las medidas ayudan, pero la identidad debe venir de las referencias visuales.</p>
         </div>
-
-        <!-- 03 código espacial -->
-        <div class="card">
-          <div class="card-head"><span class="num">03</span><h2>Código espacial</h2><span class="hint">SPATIAL_MESH_V1</span></div>
-          <div class="code-wrap">
-            <textarea id="spatial" class="code" spellcheck="false" placeholder="[SPATIAL_MESH_V1] … [/SPATIAL_MESH_V1]"></textarea>
-            <div class="actions">
-              <button class="btn" id="btnCopyCode" type="button">⧉ copiar</button>
-              <button class="btn" id="btnRebuild" type="button">↻ reconstruir</button>
-              <span class="toast" id="toastCode">copiado ✓</span>
-            </div>
-          </div>
-          <div class="recon">
-            <canvas id="recon" width="200" height="256"></canvas>
-            <div class="note">Wireframe dibujado <b>solo</b> con el código de arriba — sin mirar la foto.<br><br>
-              <span class="warnline">Captura proporción, no textura ni color.</span></div>
-          </div>
+        <div class="body stack hidden" id="panelReport">
+          <textarea class="code" id="reportOut" spellcheck="false"></textarea>
         </div>
-
-        <!-- 04 paquete -->
-        <div class="card">
-          <div class="card-head"><span class="num">04</span><h2>Paquete de regeneración</h2><span class="hint">para tu IA generativa</span></div>
-          <div class="code-wrap">
-            <textarea id="package" class="code" spellcheck="false" placeholder="Pulsa «Generar paquete» cuando tengas tus capturas y atributos."></textarea>
-            <div class="actions">
-              <button class="btn primary" id="btnGen" type="button">⚙ generar paquete</button>
-              <button class="btn" id="btnCopyPkg" type="button">⧉ copiar prompt</button>
-              <button class="btn" id="btnDossier" type="button">⬇ dossier .json</button>
-              <button class="btn" id="btnSheet" type="button">⬇ hoja PNG</button>
-              <span class="toast" id="toastPkg">copiado ✓</span>
-            </div>
-          </div>
+        <div class="body stack hidden" id="panelRefs">
+          <div class="miniList" id="refList"></div>
         </div>
-
-      </aside>
+      </section>
     </div>
 
-    <div class="foot">
-      Todo se procesa <b>localmente</b>; ninguna foto sale de tu equipo. ·
-      Usa solo imágenes de personas que <b>consienten</b> ser recreadas.
-    </div>
-  </div>
+    <section class="card">
+      <div class="head galleryTop"><b>Galería analizada</b><span id="galleryCount">0 imágenes</span><input class="field search" id="filter" placeholder="filtrar por nombre/rol"></div>
+      <div class="grid" id="gallery"></div>
+    </section>
+  </section>
+</main>
 
-  <input type="file" id="fileInput" accept="image/*" hidden />
-  <video id="video" playsinline hidden></video>
+<script type="module">
+  import { FaceLandmarker, PoseLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest";
 
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-
-  <script>
-  "use strict";
-  /* ===================================================================
-     SPATIAL MESH V1 — captura múltiple -> dossier de identidad
-     =================================================================== */
-
-  /* ---------- Bahías de captura ---------- */
-  const SLOTS = [
-    { id:'front',    label:'Frontal neutro',     hint:'al frente, sin gesto',  mesh:true,  required:true },
-    { id:'smile',    label:'Frontal sonriendo',  hint:'sonrisa natural',       mesh:true  },
-    { id:'profileL', label:'Perfil izquierdo',   hint:'~90° a tu izquierda',   mesh:false },
-    { id:'profileR', label:'Perfil derecho',     hint:'~90° a tu derecha',     mesh:false },
-    { id:'three4',   label:'3/4',                hint:'rostro girado ~45°',    mesh:false },
-    { id:'body',     label:'Cuerpo completo',    hint:'de pie, cuerpo entero', mesh:false },
-    { id:'hair',     label:'Corte reciente',     hint:'peinado actual',        mesh:false },
+  const ROLE_DEFS = [
+    {key:'face_front_neutral', label:'Rostro frontal neutro', must:'cara grande, frontal, expresión tranquila'},
+    {key:'face_front_smile', label:'Rostro frontal sonrisa', must:'sonrisa natural'},
+    {key:'face_3_4_left', label:'Rostro 3/4 izquierda', must:'volumen lateral'},
+    {key:'face_3_4_right', label:'Rostro 3/4 derecha', must:'volumen lateral'},
+    {key:'profile_left', label:'Perfil izquierdo', must:'perfil real'},
+    {key:'profile_right', label:'Perfil derecho', must:'perfil real'},
+    {key:'body_front', label:'Cuerpo completo frontal', must:'proporción corporal'},
+    {key:'body_side', label:'Cuerpo lateral', must:'volumen corporal'},
+    {key:'hair_reference', label:'Pelo actual', must:'corte, color, textura'}
   ];
-  const EXCLUDE_PRESET = ['gafas','vello facial','lunares/marcas','piercings','maquillaje','tatuajes visibles','ojeras','accesorios'];
 
-  /* ---------- Estado ---------- */
-  const captures = {};          // id -> { dataUrl, role, measures? }
-  let canonical = null;         // medidas de la frontal neutro
-  let activeSlot = null;        // bahía mostrada en el stage
-  let pendingSlot = null;       // bahía esperando resultado de Face Mesh
-  let pickTarget = null;        // bahía objetivo del input de archivo
-  let modelReady = false, warmingUp = true;
-  let camera = null, camOn = false, camRAF = null;
-
-  /* ---------- DOM ---------- */
-  const $ = (id) => document.getElementById(id);
-  const dom = {
-    led:$('led'), statusText:$('statusText'), bayGrid:$('bayGrid'),
-    progressTxt:$('progressTxt'), progressBar:$('progressBar'),
-    stage:$('stage'), idle:$('idle'),
-    btnCam:$('btnCam'), btnSnap:$('btnSnap'),
-    metrics:$('metrics'), gSym:$('gSym'), gTilt:$('gTilt'),
-    spatial:$('spatial'), recon:$('recon'),
-    btnCopyCode:$('btnCopyCode'), btnRebuild:$('btnRebuild'), toastCode:$('toastCode'),
-    excludeChips:$('excludeChips'), excludeOther:$('excludeOther'),
-    package:$('package'), btnGen:$('btnGen'), btnCopyPkg:$('btnCopyPkg'),
-    btnDossier:$('btnDossier'), btnSheet:$('btnSheet'), toastPkg:$('toastPkg'),
-    fileInput:$('fileInput'), video:$('video'),
+  const $ = (id)=>document.getElementById(id);
+  const state = {items:[], face:null, pose:null, selected:null, modelsReady:false, modelFailed:false, modelPromise:null, busy:false};
+  const els = {
+    dot:$('modelDot'), status:$('modelStatus'), drop:$('drop'), fileInput:$('fileInput'), pick:$('pickBtn'), clear:$('clearBtn'),
+    progressBar:$('progressBar'), progressText:$('progressText'), gallery:$('gallery'), galleryCount:$('galleryCount'), filter:$('filter'),
+    canvas:$('previewCanvas'), empty:$('emptyPreview'), selectedName:$('selectedName'), roles:$('roles'), mPhotos:$('mPhotos'), mGood:$('mGood'), mRefs:$('mRefs'),
+    autoAssign:$('autoAssignBtn'), zip:$('zipBtn'), contact:$('contactBtn'), prompt:$('promptOut'), report:$('reportOut'), refs:$('refList'),
+    regenPrompt:$('regenPromptBtn'), promptBtn:$('promptBtn')
   };
-  const ctx  = dom.stage.getContext('2d');
-  const rctx = dom.recon.getContext('2d');
+  const ctx = els.canvas.getContext('2d');
 
-  /* ---------- Landmarks ---------- */
-  const LM = {
-    IRIS_A:468, IRIS_B:473,
-    EYE_R_OUT:33, EYE_R_IN:133, EYE_R_TOP:159, EYE_R_BOT:145,
-    EYE_L_IN:362, EYE_L_OUT:263, EYE_L_TOP:386, EYE_L_BOT:374,
-    BROW_R:105, BROW_L:334, CHEEK_A:234, CHEEK_B:454,
-    FACE_TOP:10, CHIN:152, NOSE_BRIDGE:168, NOSE_TIP:1, NOSE_BASE:2,
-    ALA_A:48, ALA_B:278, MOUTH_L:61, MOUTH_R:291,
-    LIP_TOP:13, LIP_BOT:14, LIP_OUT_TOP:0, LIP_OUT_BOT:17, JAW_A:172, JAW_B:397,
-  };
+  init();
 
-  /* ---------- Face Mesh ---------- */
-  const faceMesh = new FaceMesh({ locateFile:(f)=>`https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}` });
-  faceMesh.setOptions({ maxNumFaces:1, refineLandmarks:true, minDetectionConfidence:0.5, minTrackingConfidence:0.5 });
-  faceMesh.onResults(onResults);
-  (async function warmup(){
-    try{ const c=document.createElement('canvas'); c.width=c.height=64; await faceMesh.send({image:c}); }catch(e){}
-  })();
-
-  /* ---------- Utilidades ---------- */
-  function setStatus(kind,text){ dom.led.className='led '+kind; dom.statusText.textContent=text; }
-  function labelOf(id){ const s=SLOTS.find(x=>x.id===id); return s?s.label:id; }
-  function toast(el){ el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),1400); }
-  function fitStage(w,h){ dom.stage.width=w; dom.stage.height=h; dom.stage.style.display='block'; dom.idle.style.display='none'; }
-  function download(name,blob){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),3000); }
-
-  /* ---------- Geometría ---------- */
-  function P(lms,i){ const p=lms[i]; return { x:p.x*dom.stage.width, y:p.y*dom.stage.height, z:p.z*dom.stage.width }; }
-  function d2(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
-  function mid(a,b){ return { x:(a.x+b.x)/2, y:(a.y+b.y)/2 }; }
-
-  function computeMeasures(lms){
-    const g=(i)=>P(lms,i);
-    let base=d2(g(LM.IRIS_A),g(LM.IRIS_B));
-    if(!isFinite(base)||base<1){ base=d2(mid(g(LM.EYE_R_OUT),g(LM.EYE_R_IN)), mid(g(LM.EYE_L_OUT),g(LM.EYE_L_IN))); }
-    const N=(px)=>px/base;
-    const eyeR=mid(g(LM.EYE_R_OUT),g(LM.EYE_R_IN)), eyeL=mid(g(LM.EYE_L_OUT),g(LM.EYE_L_IN));
-    const eyeLine=mid(eyeR,eyeL), mouthC=mid(g(LM.LIP_TOP),g(LM.LIP_BOT));
-    const faceTop=g(LM.FACE_TOP), chin=g(LM.CHIN), faceH=d2(faceTop,chin);
-    const m={
-      base_px:base, eye_dist:1.0,
-      eye_w:N((d2(g(LM.EYE_R_OUT),g(LM.EYE_R_IN))+d2(g(LM.EYE_L_OUT),g(LM.EYE_L_IN)))/2),
-      face_w:N(d2(g(LM.CHEEK_A),g(LM.CHEEK_B))), face_h:N(faceH),
-      nose_h:N(d2(g(LM.NOSE_BRIDGE),g(LM.NOSE_BASE))), nose_w:N(d2(g(LM.ALA_A),g(LM.ALA_B))),
-      mouth_w:N(d2(g(LM.MOUTH_L),g(LM.MOUTH_R))), mouth_h:N(d2(g(LM.LIP_OUT_TOP),g(LM.LIP_OUT_BOT))),
-      jaw_w:N(d2(g(LM.JAW_A),g(LM.JAW_B))),
-      brow_eye:N((d2(g(LM.BROW_R),g(LM.EYE_R_TOP))+d2(g(LM.BROW_L),g(LM.EYE_L_TOP)))/2),
-      eye_nose:N(d2(eyeLine,g(LM.NOSE_BASE))), nose_mouth:N(d2(g(LM.NOSE_BASE),mouthC)),
-      mouth_chin:N(d2(mouthC,chin)),
-    };
-    m.face_wh=m.face_w/m.face_h;
-    const vf=(pt)=>(pt.y-faceTop.y)/faceH;
-    m.v_brow=(mid(g(LM.BROW_R),g(LM.BROW_L)).y-faceTop.y)/faceH;
-    m.v_eye=vf(eyeLine); m.v_nose=vf(g(LM.NOSE_BASE)); m.v_mouth=vf(mouthC);
-    m.v_jaw=(mid(g(LM.JAW_A),g(LM.JAW_B)).y-faceTop.y)/faceH;
-    const tR=Math.atan2(g(LM.EYE_R_OUT).y-g(LM.EYE_R_IN).y, g(LM.EYE_R_OUT).x-g(LM.EYE_R_IN).x);
-    const tL=Math.atan2(g(LM.EYE_L_IN).y-g(LM.EYE_L_OUT).y, g(LM.EYE_L_IN).x-g(LM.EYE_L_OUT).x);
-    m.canthal=(Math.abs(tR)+Math.abs(tL))/2*180/Math.PI;
-    const axisX=(faceTop.x+g(LM.NOSE_TIP).x+chin.x)/3;
-    const pairs=[[LM.EYE_R_OUT,LM.EYE_L_OUT],[LM.MOUTH_L,LM.MOUTH_R],[LM.CHEEK_A,LM.CHEEK_B],[LM.ALA_A,LM.ALA_B],[LM.JAW_A,LM.JAW_B]];
-    let asym=0; for(const [a,b] of pairs){ const dl=Math.abs(axisX-g(a).x), dr=Math.abs(g(b).x-axisX), s=dl+dr; if(s>0) asym+=Math.abs(dl-dr)/s; }
-    m.symmetry=Math.max(0,100*(1-asym/pairs.length)); m.axisX=axisX;
-    return m;
+  async function init(){
+    renderRoles();
+    setPrompt();
+    wireEvents();
+    state.modelPromise = loadModels();
+    await state.modelPromise;
   }
 
-  /* ---------- Overlay ---------- */
-  function drawOverlay(lms,m){
-    const g=(i)=>P(lms,i);
-    ctx.fillStyle='rgba(120,140,165,.35)';
-    for(let i=0;i<lms.length;i++){ const p=g(i); ctx.beginPath(); ctx.arc(p.x,p.y,1.1,0,7); ctx.fill(); }
-    ctx.strokeStyle='rgba(139,123,255,.7)'; ctx.lineWidth=1; ctx.setLineDash([5,5]);
-    ctx.beginPath(); ctx.moveTo(m.axisX,0); ctx.lineTo(m.axisX,dom.stage.height); ctx.stroke(); ctx.setLineDash([]);
-    const eyeLine=mid(mid(g(LM.EYE_R_OUT),g(LM.EYE_R_IN)),mid(g(LM.EYE_L_OUT),g(LM.EYE_L_IN)));
-    const mouthC=mid(g(LM.LIP_TOP),g(LM.LIP_BOT));
-    const lines=[[g(LM.CHEEK_A),g(LM.CHEEK_B)],[g(LM.FACE_TOP),g(LM.CHIN)],[g(LM.ALA_A),g(LM.ALA_B)],
-      [g(LM.NOSE_BRIDGE),g(LM.NOSE_BASE)],[g(LM.MOUTH_L),g(LM.MOUTH_R)],[g(LM.JAW_A),g(LM.JAW_B)],
-      [eyeLine,g(LM.NOSE_BASE)],[g(LM.NOSE_BASE),mouthC],[mouthC,g(LM.CHIN)]];
-    ctx.lineWidth=1.6;
-    for(const [a,b] of lines){ ctx.strokeStyle='rgba(52,224,196,.85)'; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
-      ctx.fillStyle='#34e0c4'; ctx.beginPath(); ctx.arc(a.x,a.y,2.2,0,7); ctx.fill(); ctx.beginPath(); ctx.arc(b.x,b.y,2.2,0,7); ctx.fill(); }
-    const ia=g(LM.IRIS_A), ib=g(LM.IRIS_B);
-    ctx.strokeStyle='#ff6b5e'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(ia.x,ia.y); ctx.lineTo(ib.x,ib.y); ctx.stroke();
-    ctx.fillStyle='#ff6b5e'; for(const p of [ia,ib]){ ctx.beginPath(); ctx.arc(p.x,p.y,3.4,0,7); ctx.fill(); }
-    const mc=mid(ia,ib), t='1.000 base';
-    ctx.font='700 11px JetBrains Mono, monospace'; const w=ctx.measureText(t).width+8;
-    ctx.fillStyle='rgba(8,11,17,.78)'; ctx.fillRect(mc.x-w/2,mc.y-21,w,15);
-    ctx.fillStyle='#ff6b5e'; ctx.textAlign='center'; ctx.fillText(t,mc.x,mc.y-10); ctx.textAlign='left';
-  }
-
-  /* ---------- Panel métricas ---------- */
-  function renderMetrics(m){
-    const rows=[['EYE_DIST',m.eye_dist,true,2.5],['EYE_W',m.eye_w,0,2.5],['FACE_W',m.face_w,0,4],['FACE_H',m.face_h,0,5.5],
-      ['FACE_W/H',m.face_wh,0,1.2],['NOSE_H',m.nose_h,0,2],['NOSE_W',m.nose_w,0,2],['MOUTH_W',m.mouth_w,0,2.5],
-      ['MOUTH_H',m.mouth_h,0,1],['JAW_W',m.jaw_w,0,4],['BROW_EYE',m.brow_eye,0,1],['EYE_NOSE',m.eye_nose,0,2],
-      ['NOSE_MOUTH',m.nose_mouth,0,1.5],['MOUTH_CHIN',m.mouth_chin,0,2]];
-    dom.metrics.innerHTML=rows.map(([n,v,b,sc])=>{
-      const pct=Math.min(100,(v/sc)*100);
-      return `<div class="metric ${b?'is-base':''}"><span class="name">${n}</span>
-        <span class="val ${b?'base':''}">${v.toFixed(3)}</span>
-        <span class="bar"><span style="width:${pct}%"></span></span></div>`;
-    }).join('');
-    dom.gSym.textContent=m.symmetry.toFixed(1)+'%';
-    dom.gSym.className='v '+(m.symmetry>=92?'good':m.symmetry>=85?'warn':'bad');
-    dom.gTilt.textContent=m.canthal.toFixed(1)+'°'; dom.gTilt.className='v good';
-  }
-
-  /* ---------- Código espacial ---------- */
-  function generateCode(m){
-    const f=(x)=>x.toFixed(3); const now=new Date().toISOString().slice(0,19).replace('T',' ');
-    return ['[SPATIAL_MESH_V1]','# base = distancia interocular (iris-iris) = 1.000',
-      `META: src=face_mesh_478; ts=${now}`,`BASE_PX: ${m.base_px.toFixed(1)}`,'',
-      '--- PROPORCIONES (norm. interocular) ---',
-      `EYE_DIST:   ${f(m.eye_dist)}`,`EYE_W:      ${f(m.eye_w)}`,`FACE_W:     ${f(m.face_w)}`,`FACE_H:     ${f(m.face_h)}`,
-      `NOSE_H:     ${f(m.nose_h)}`,`NOSE_W:     ${f(m.nose_w)}`,`MOUTH_W:    ${f(m.mouth_w)}`,`MOUTH_H:    ${f(m.mouth_h)}`,
-      `JAW_W:      ${f(m.jaw_w)}`,`BROW_EYE:   ${f(m.brow_eye)}`,`EYE_NOSE:   ${f(m.eye_nose)}`,
-      `NOSE_MOUTH: ${f(m.nose_mouth)}`,`MOUTH_CHIN: ${f(m.mouth_chin)}`,'',
-      '--- RATIOS ---',`FACE_WH:    ${f(m.face_wh)}`,'',
-      '--- MAPA VERTICAL (frac. FACE_H) ---',
-      `V_BROW:     ${f(m.v_brow)}`,`V_EYE:      ${f(m.v_eye)}`,`V_NOSE:     ${f(m.v_nose)}`,
-      `V_MOUTH:    ${f(m.v_mouth)}`,`V_JAW:      ${f(m.v_jaw)}`,'',
-      '--- ÁNGULOS ---',`CANTHAL_TILT: ${m.canthal.toFixed(1)}deg`,'',
-      '--- INTEGRIDAD ---',`SYMMETRY:   ${m.symmetry.toFixed(1)}%`,'[/SPATIAL_MESH_V1]'].join('\n');
-  }
-  function parseCode(text){ const o={}; text.split('\n').forEach(l=>{ const mt=l.match(/^([A-Z_]+):\s*([-\d.]+)/); if(mt) o[mt[1]]=parseFloat(mt[2]); }); return o; }
-
-  /* ---------- Reconstrucción wireframe ---------- */
-  function rebuild(code){
-    const W=dom.recon.width,H=dom.recon.height; rctx.clearRect(0,0,W,H);
-    const need=['FACE_W','FACE_H','EYE_DIST','EYE_W','NOSE_W','MOUTH_W','JAW_W','V_EYE','V_NOSE','V_MOUTH','V_BROW','V_JAW'];
-    if(!need.every(k=>k in code)){ rctx.fillStyle='#62748a'; rctx.font='11px JetBrains Mono'; rctx.textAlign='center';
-      rctx.fillText('código incompleto',W/2,H/2); rctx.textAlign='left'; return; }
-    const cx=W/2, faceTop=24, faceBottom=H-20, faceH=faceBottom-faceTop, unit=faceH/code.FACE_H, yAt=(fr)=>faceTop+fr*faceH;
-    rctx.lineWidth=1.4; rctx.strokeStyle='#34e0c4'; rctx.fillStyle='#34e0c4';
-    el(cx,faceTop+faceH/2,(code.FACE_W*unit)/2,faceH/2);
-    rctx.strokeStyle='rgba(52,224,196,.5)'; arc(cx,yAt(code.V_JAW),(code.JAW_W*unit)/2,faceH*0.16,0.15*Math.PI,0.85*Math.PI); rctx.strokeStyle='#34e0c4';
-    const eyeY=yAt(code.V_EYE), sep=0.5*code.EYE_DIST*unit, ew=code.EYE_W*unit;
-    eye(cx-sep,eyeY,ew); eye(cx+sep,eyeY,ew);
-    const browY=yAt(code.V_BROW); brow(cx-sep,browY,ew); brow(cx+sep,browY,ew);
-    const nbY=yAt(code.V_NOSE); rctx.beginPath(); rctx.moveTo(cx,eyeY+ew*0.2); rctx.lineTo(cx-2,nbY); rctx.stroke();
-    const nw=code.NOSE_W*unit; rctx.beginPath(); rctx.moveTo(cx-nw/2,nbY); rctx.quadraticCurveTo(cx,nbY+5,cx+nw/2,nbY); rctx.stroke();
-    const mY=yAt(code.V_MOUTH), mw=code.MOUTH_W*unit, mh=(code.MOUTH_H||0.4)*unit;
-    rctx.beginPath(); rctx.moveTo(cx-mw/2,mY); rctx.quadraticCurveTo(cx,mY-mh*0.7,cx+mw/2,mY);
-    rctx.quadraticCurveTo(cx,mY+mh*0.9,cx-mw/2,mY); rctx.stroke();
-    function el(x,y,rx,ry){ rctx.beginPath(); rctx.ellipse(x,y,Math.max(2,rx),Math.max(2,ry),0,0,7); rctx.stroke(); }
-    function arc(x,y,rx,ry,a0,a1){ rctx.beginPath(); rctx.ellipse(x,y,Math.max(2,rx),Math.max(2,ry),0,a0,a1); rctx.stroke(); }
-    function eye(x,y,w){ rctx.beginPath(); rctx.ellipse(x,y,w/2,w*0.28,0,0,7); rctx.stroke(); rctx.beginPath(); rctx.arc(x,y,Math.max(1.6,w*0.13),0,7); rctx.fill(); }
-    function brow(x,y,w){ rctx.strokeStyle='rgba(52,224,196,.7)'; rctx.beginPath(); rctx.moveTo(x-w/2,y+2); rctx.quadraticCurveTo(x,y-3,x+w/2,y); rctx.stroke(); rctx.strokeStyle='#34e0c4'; }
-  }
-
-  /* ---------- Resultado Face Mesh ---------- */
-  function onResults(results){
-    if(warmingUp){ warmingUp=false; modelReady=true; setStatus('ready','modelo listo'); return; }
-    const slot=pendingSlot; pendingSlot=null;
-    const img=results.image;
-    if(img&&img.width){ fitStage(img.width,img.height); ctx.clearRect(0,0,dom.stage.width,dom.stage.height); ctx.drawImage(img,0,0,dom.stage.width,dom.stage.height); }
-    const faces=results.multiFaceLandmarks;
-    if(!faces||!faces.length){
-      setStatus('nofind','sin rostro en '+labelOf(slot));
-      if(slot==='front'){ canonical=null; dom.metrics.innerHTML='<div class="metric-empty">No se detectó rostro en la frontal.<br>Usa una foto frontal y bien iluminada.</div>';
-        dom.gSym.textContent='—'; dom.gSym.className='v'; dom.gTilt.textContent='—'; dom.gTilt.className='v'; }
-      return;
+  async function loadModels(){
+    try{
+      const vision = await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm');
+      state.face = await FaceLandmarker.createFromOptions(vision, {
+        baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task', delegate:'GPU'},
+        runningMode:'IMAGE', numFaces:1, outputFaceBlendshapes:true, outputFacialTransformationMatrixes:true,
+        minFaceDetectionConfidence:0.45, minFacePresenceConfidence:0.45
+      });
+      state.pose = await PoseLandmarker.createFromOptions(vision, {
+        baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/latest/pose_landmarker_lite.task', delegate:'GPU'},
+        runningMode:'IMAGE', numPoses:1, outputSegmentationMasks:false,
+        minPoseDetectionConfidence:0.45, minPosePresenceConfidence:0.45
+      });
+      state.modelsReady = true;
+      els.dot.className='dot ready'; els.status.textContent='modelos listos';
+    }catch(err){
+      console.error(err);
+      state.modelFailed = true;
+      els.dot.className='dot fail'; els.status.textContent='sin modelos: modo básico';
     }
-    const lms=faces[0], m=computeMeasures(lms);
-    drawOverlay(lms,m);
-    if(captures[slot]) captures[slot].measures=m;
-    if(slot==='front'){ canonical=m; renderMetrics(m); const code=generateCode(m); dom.spatial.value=code; rebuild(parseCode(code)); }
-    setStatus('lock','✓ '+labelOf(slot));
   }
 
-  /* ---------- Mostrar imagen sin overlay (bahías no-mesh) ---------- */
-  function showImage(imgEl){ fitStage(imgEl.naturalWidth||imgEl.width,imgEl.naturalHeight||imgEl.height);
-    ctx.clearRect(0,0,dom.stage.width,dom.stage.height); ctx.drawImage(imgEl,0,0,dom.stage.width,dom.stage.height); }
+  function wireEvents(){
+    els.pick.onclick=()=>els.fileInput.click();
+    els.fileInput.onchange=(e)=>handleFiles([...e.target.files]);
+    els.clear.onclick=()=>{state.items.forEach(i=>URL.revokeObjectURL(i.url));state.items=[];state.selected=null;renderAll();setPrompt();};
+    ['dragenter','dragover'].forEach(ev=>els.drop.addEventListener(ev,e=>{e.preventDefault();els.drop.classList.add('hot')}));
+    ['dragleave','drop'].forEach(ev=>els.drop.addEventListener(ev,e=>{e.preventDefault();els.drop.classList.remove('hot')}));
+    els.drop.ondrop=(e)=>handleFiles([...e.dataTransfer.files].filter(f=>f.type.startsWith('image/')));
+    els.drop.onclick=()=>els.fileInput.click();
+    els.autoAssign.onclick=autoAssignRoles;
+    els.zip.onclick=downloadZip;
+    els.contact.onclick=downloadContactSheet;
+    els.regenPrompt.onclick=setPrompt;
+    els.promptBtn.onclick=async()=>{setPrompt(); await copyText(els.prompt.value); alert('Prompt copiado');};
+    els.filter.oninput=renderGallery;
+    document.querySelectorAll('.tab').forEach(btn=>btn.onclick=()=>showTab(btn.dataset.tab));
+  }
 
-  /* ---------- Recibir foto en una bahía ---------- */
-  function receive(slotId,dataUrl){
-    const slot=SLOTS.find(s=>s.id===slotId);
-    captures[slotId]={ dataUrl, role:slot.label, measures:null };
-    activeSlot=slotId; renderBays(); updateProgress();
-    const img=new Image();
-    img.onload=async()=>{
-      if(slot.mesh){ if(camOn) stopCamera(); pendingSlot=slotId; setStatus('loading','analizando '+slot.label+'…');
-        try{ await faceMesh.send({image:img}); }catch(e){ console.error(e); setStatus('nofind','error al procesar'); } }
-      else { showImage(img); setStatus('lock','✓ '+slot.label); }
+  async function handleFiles(files){
+    if(!files.length) return;
+    state.busy=true;
+    if(!state.modelsReady && !state.modelFailed && state.modelPromise){
+      updateProgress(0, files.length, 'esperando modelos');
+      await Promise.race([state.modelPromise, delay(10000)]);
+    }
+    const start = state.items.length;
+    for(let idx=0; idx<files.length; idx++){
+      const file = files[idx];
+      const item = makeItem(file);
+      state.items.push(item);
+      updateProgress(start+idx, start+files.length, 'decodificando');
+      try{ await analyzeItem(item); }catch(err){ console.error(err); item.error=String(err); item.quality.label='error'; item.quality.score=0; }
+      renderAll(false);
+      await delay(20);
+    }
+    state.busy=false;
+    updateProgress(state.items.length, state.items.length, 'listo');
+    autoAssignRoles(false);
+    renderAll(); setPrompt();
+  }
+
+  function makeItem(file){
+    const id = crypto.randomUUID ? crypto.randomUUID() : 'id_'+Date.now()+'_'+Math.random().toString(16).slice(2);
+    return {id,file,name:file.name,url:URL.createObjectURL(file),role:'',manual:false,quality:{score:0,label:'pendiente'},image:{},face:null,pose:null,measurements:null,tags:[]};
+  }
+
+  async function analyzeItem(item){
+    const img = await loadImage(item.url);
+    item.image = {width:img.naturalWidth, height:img.naturalHeight, megapixels:+((img.naturalWidth*img.naturalHeight)/1e6).toFixed(2)};
+    const sharpness = await estimateSharpness(img);
+    item.image.sharpness = sharpness;
+
+    if(state.modelsReady){
+      const faceRes = state.face.detect(img);
+      const poseRes = state.pose.detect(img);
+      item.face = summarizeFace(faceRes, img);
+      item.pose = summarizePose(poseRes, img);
+      if(item.face?.landmarks) item.measurements = faceMeasurements(item.face.landmarks, img);
+    }
+    item.quality = scoreImage(item);
+    item.tags = inferTags(item);
+  }
+
+  function summarizeFace(res, img){
+    if(!res?.faceLandmarks?.length) return null;
+    const l = res.faceLandmarks[0];
+    let minX=1,minY=1,maxX=0,maxY=0;
+    for(const p of l){ minX=Math.min(minX,p.x); minY=Math.min(minY,p.y); maxX=Math.max(maxX,p.x); maxY=Math.max(maxY,p.y); }
+    const box = {x:minX,y:minY,w:maxX-minX,h:maxY-minY,area:(maxX-minX)*(maxY-minY)};
+    const blend = {};
+    const cats = res.faceBlendshapes?.[0]?.categories || [];
+    for(const c of cats) blend[c.categoryName]=+c.score.toFixed(4);
+    const leftEye = midpoint(l[33],l[133]), rightEye = midpoint(l[362],l[263]), nose=l[1]||l[4];
+    const eyeCenter = midpoint(leftEye,rightEye);
+    const eyeDist = dist(leftEye,rightEye);
+    const noseOffset = eyeDist ? (nose.x-eyeCenter.x)/eyeDist : 0;
+    let angle = 'frontal';
+    if(Math.abs(noseOffset)>.18) angle = noseOffset>0?'3/4 derecha':'3/4 izquierda';
+    if(Math.abs(noseOffset)>.34) angle = noseOffset>0?'perfil derecha aprox.':'perfil izquierda aprox.';
+    const smile = ((blend.mouthSmileLeft||0)+(blend.mouthSmileRight||0))/2;
+    return {box,angle,noseOffset:+noseOffset.toFixed(3),smile:+smile.toFixed(3),landmarks:l.map(p=>({x:+p.x.toFixed(5),y:+p.y.toFixed(5),z:+(p.z||0).toFixed(5)})), blendshapes:blend, matrixes:res.facialTransformationMatrixes||[]};
+  }
+
+  function summarizePose(res, img){
+    if(!res?.landmarks?.length) return null;
+    const l = res.landmarks[0];
+    const visible = l.filter(p=>(p.visibility ?? 1)>.45).length;
+    const nose=l[0], leftAnkle=l[27], rightAnkle=l[28], leftShoulder=l[11], rightShoulder=l[12], leftHip=l[23], rightHip=l[24];
+    const hasFullBody = !!(nose && leftAnkle && rightAnkle && ((leftAnkle.visibility??1)>.35 || (rightAnkle.visibility??1)>.35));
+    const shoulderW = leftShoulder&&rightShoulder ? Math.abs(leftShoulder.x-rightShoulder.x) : 0;
+    const hipW = leftHip&&rightHip ? Math.abs(leftHip.x-rightHip.x) : 0;
+    return {visible, hasFullBody, shoulderW:+shoulderW.toFixed(4), hipW:+hipW.toFixed(4), landmarks:l.map(p=>({x:+p.x.toFixed(5),y:+p.y.toFixed(5),z:+(p.z||0).toFixed(5),visibility:+(p.visibility??0).toFixed(3)})), worldLandmarks:(res.worldLandmarks?.[0]||[]).map(p=>({x:+p.x.toFixed(5),y:+p.y.toFixed(5),z:+p.z.toFixed(5),visibility:+(p.visibility??0).toFixed(3)}))};
+  }
+
+  function faceMeasurements(landmarks, img){
+    const p=(i)=>landmarks[i];
+    const eyeL=midpoint(p(33),p(133)), eyeR=midpoint(p(362),p(263));
+    const base=dist(eyeL,eyeR) || 1;
+    const n=(v)=>+(v/base).toFixed(3);
+    const faceW = dist(p(234),p(454));
+    const faceH = dist(p(10),p(152));
+    return {
+      base:'interocular',
+      eye_dist:1,
+      face_w:n(faceW), face_h:n(faceH), face_wh:+(faceW/(faceH||1)).toFixed(3),
+      eye_w:n((dist(p(33),p(133))+dist(p(362),p(263)))/2),
+      nose_w:n(dist(p(48),p(278))), nose_h:n(dist(p(168),p(2))),
+      mouth_w:n(dist(p(61),p(291))), mouth_h:n(dist(p(13),p(14))),
+      jaw_w:n(dist(p(172),p(397))),
+      v_eye:+(((eyeL.y+eyeR.y)/2-p(10).y)/(faceH||1)).toFixed(3),
+      v_nose:+((p(2).y-p(10).y)/(faceH||1)).toFixed(3),
+      v_mouth:+(((p(13).y+p(14).y)/2-p(10).y)/(faceH||1)).toFixed(3)
     };
-    img.onerror=()=>setStatus('nofind','imagen no válida');
-    img.src=dataUrl;
   }
-  function fileToReceive(slotId,file){ if(!file||!file.type.startsWith('image/')) return;
-    const r=new FileReader(); r.onload=()=>receive(slotId,r.result); r.readAsDataURL(file); }
 
-  /* ---------- Render de bahías ---------- */
-  function renderBays(){
-    dom.bayGrid.innerHTML=SLOTS.map(s=>{
-      const c=captures[s.id], filled=!!c;
-      return `<div class="bay ${filled?'filled':''} ${s.required?'required':''} ${activeSlot===s.id?'active':''}" data-id="${s.id}">
-        ${s.required?'<span class="req-tag">REQ</span>':''}
-        ${filled?`<img src="${c.dataUrl}" alt="">`:'<span class="plus">＋</span>'}
-        <span class="ok">✓</span>${filled?'<span class="rm" data-rm="'+s.id+'">×</span>':''}
-        <span class="meta"><span class="lab">${s.label}</span><span class="hnt">${s.hint}</span></span>
-      </div>`;
+  function scoreImage(item){
+    let score=0; const reasons=[];
+    const mp = item.image.megapixels||0;
+    if(mp>=1.8) score+=22; else if(mp>=.8) score+=14; else {score+=6; reasons.push('baja resolución');}
+    if(item.image.sharpness>=18) score+=22; else if(item.image.sharpness>=9) score+=13; else {score+=4; reasons.push('poca nitidez');}
+    if(item.face){
+      score+=24;
+      const a=item.face.box.area;
+      if(a>.055 && a<.42) score+=18; else if(a>.025) score+=10; else {score+=4; reasons.push('cara chica/lejana');}
+      if(Math.abs(item.face.box.x+item.face.box.w/2-.5)<.22) score+=6; else reasons.push('cara descentrada');
+      if(item.face.smile>.18) score+=3;
+    }else reasons.push('sin rostro detectado');
+    if(item.pose?.hasFullBody) score+=12; else if(item.pose) score+=5;
+    score=Math.max(0,Math.min(100,Math.round(score)));
+    return {score,label: score>=72?'buena':score>=48?'usable':'débil',reasons};
+  }
+
+  function inferTags(item){
+    const tags=[];
+    if(item.face){tags.push(item.face.angle); if(item.face.smile>.20) tags.push('sonrisa'); else tags.push('neutra');}
+    if(item.pose?.hasFullBody) tags.push('cuerpo completo');
+    if(item.image.megapixels<.8) tags.push('baja resolución');
+    if(item.quality.label==='buena') tags.push('buena referencia');
+    return tags;
+  }
+
+  function autoAssignRoles(update=true){
+    if(!state.items.length) return;
+    for(const item of state.items){ if(!item.manual) item.role=''; }
+    const available = (roleKey)=>state.items.filter(i=>!i.manual && !i.role && fitsRole(i,roleKey)).sort((a,b)=>b.quality.score-a.quality.score);
+    const assign=(key)=>{const found=available(key)[0]; if(found) found.role=key;};
+    ROLE_DEFS.forEach(r=>assign(r.key));
+    const naturals=state.items.filter(i=>!i.role && i.quality.score>=70).sort((a,b)=>b.quality.score-a.quality.score).slice(0,4);
+    naturals.forEach((i,n)=>i.role='natural_reference_'+String(n+1).padStart(2,'0'));
+    if(update){renderAll();setPrompt();}
+  }
+
+  function fitsRole(i,key){
+    if(key.startsWith('body')) return !!i.pose?.hasFullBody && i.quality.score>=40;
+    if(key==='hair_reference') return !!i.face && i.face.box.area>.08 && i.quality.score>=45;
+    if(!i.face) return false;
+    if(key==='face_front_neutral') return i.face.angle==='frontal' && i.face.smile<.18;
+    if(key==='face_front_smile') return i.face.angle==='frontal' && i.face.smile>=.14;
+    if(key==='face_3_4_left') return i.face.angle.includes('izquierda') && !i.face.angle.includes('perfil');
+    if(key==='face_3_4_right') return i.face.angle.includes('derecha') && !i.face.angle.includes('perfil');
+    if(key==='profile_left') return i.face.angle.includes('perfil izquierda');
+    if(key==='profile_right') return i.face.angle.includes('perfil derecha');
+    return false;
+  }
+
+  function renderAll(drawPreview=true){
+    renderStats(); renderRoles(); renderGallery(); renderRefs(); updateReport();
+    if(drawPreview && state.selected) showPreview(state.selected);
+  }
+
+  function renderStats(){
+    const good=state.items.filter(i=>i.quality.score>=72).length;
+    const refs=ROLE_DEFS.filter(r=>state.items.some(i=>i.role===r.key)).length;
+    els.mPhotos.textContent=state.items.length; els.mGood.textContent=good; els.mGood.className='v '+(good>=10?'good':good>=4?'warn':'bad'); els.mRefs.textContent=refs+'/'+ROLE_DEFS.length; els.mRefs.className='v '+(refs>=7?'good':refs>=4?'warn':'bad');
+    els.galleryCount.textContent=state.items.length+' imágenes';
+  }
+
+  function renderRoles(){
+    els.roles.innerHTML = ROLE_DEFS.map(r=>{
+      const item=state.items.find(i=>i.role===r.key);
+      return `<div class="roleline"><div><strong>${r.label}</strong><small>${item?item.name:r.must}</small></div><span class="pill ${item?'':'empty'}">${item?'OK':'FALTA'}</span></div>`;
     }).join('');
-    // listeners
-    dom.bayGrid.querySelectorAll('.bay').forEach(b=>{
-      const id=b.dataset.id;
-      b.addEventListener('click',e=>{ if(e.target.dataset.rm) return;
-        if(captures[id]){ activeSlot=id; const img=new Image(); const slot=SLOTS.find(s=>s.id===id);
-          img.onload=()=>{ if(slot.mesh){ pendingSlot=id; faceMesh.send({image:img}); } else showImage(img); }; img.src=captures[id].dataUrl; renderBays(); }
-        else { pickTarget=id; dom.fileInput.click(); } });
-      ['dragenter','dragover'].forEach(ev=>b.addEventListener(ev,e=>{ e.preventDefault(); b.classList.add('hot'); }));
-      ['dragleave','drop'].forEach(ev=>b.addEventListener(ev,e=>{ e.preventDefault(); b.classList.remove('hot'); }));
-      b.addEventListener('drop',e=>{ const f=e.dataTransfer.files[0]; fileToReceive(id,f); });
+  }
+
+  function renderGallery(){
+    const q=(els.filter.value||'').toLowerCase();
+    const list=state.items.filter(i=>(i.name+' '+i.role+' '+i.tags.join(' ')).toLowerCase().includes(q));
+    els.gallery.innerHTML = list.map(item=>photoCard(item)).join('');
+    els.gallery.querySelectorAll('[data-id]').forEach(card=>{
+      const id=card.dataset.id, item=state.items.find(x=>x.id===id);
+      card.querySelector('img').onclick=()=>{state.selected=item;showPreview(item)};
+      card.querySelector('[data-view]').onclick=()=>{state.selected=item;showPreview(item)};
+      card.querySelector('select').onchange=(e)=>{item.role=e.target.value;item.manual=!!item.role;renderAll(false);setPrompt();};
+      card.querySelector('[data-remove]').onclick=()=>{URL.revokeObjectURL(item.url);state.items=state.items.filter(x=>x.id!==id);if(state.selected?.id===id) state.selected=null;renderAll();setPrompt();};
     });
-    dom.bayGrid.querySelectorAll('[data-rm]').forEach(x=>x.addEventListener('click',e=>{ e.stopPropagation();
-      const id=x.dataset.rm; delete captures[id]; if(activeSlot===id) activeSlot=null;
-      if(id==='front'){ canonical=null; dom.spatial.value=''; rctx.clearRect(0,0,dom.recon.width,dom.recon.height);
-        dom.metrics.innerHTML='<div class="metric-empty">Aún sin frontal neutro analizada.</div>'; dom.gSym.textContent='—'; dom.gTilt.textContent='—'; }
-      renderBays(); updateProgress(); }));
   }
-  function updateProgress(){ const n=Object.keys(captures).length, t=SLOTS.length;
-    dom.progressTxt.textContent=`${n} / ${t}`; dom.progressBar.style.width=(n/t*100)+'%'; }
 
-  /* ---------- Chips de exclusión ---------- */
-  dom.excludeChips.innerHTML=EXCLUDE_PRESET.map(x=>`<span class="chip" role="button" aria-pressed="false">${x}</span>`).join('');
-  dom.excludeChips.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ c.setAttribute('aria-pressed', c.getAttribute('aria-pressed')==='true'?'false':'true'); }));
-  function getExcluded(){ const a=[...dom.excludeChips.querySelectorAll('.chip[aria-pressed="true"]')].map(c=>c.textContent);
-    const extra=dom.excludeOther.value.split(',').map(s=>s.trim()).filter(Boolean); return [...a,...extra]; }
+  function photoCard(item){
+    const cls=item.quality.score>=72?'good':item.quality.score>=48?'warn':'bad';
+    const options=['','natural_reference_01','natural_reference_02','natural_reference_03','natural_reference_04',...ROLE_DEFS.map(r=>r.key)]
+      .map(k=>`<option value="${k}" ${item.role===k?'selected':''}>${k?roleLabel(k):'sin rol'}</option>`).join('');
+    return `<article class="photo" data-id="${item.id}">
+      <div class="thumb"><img src="${item.url}" alt=""><span class="badge ${cls}">${item.quality.score}</span><span class="angle">${item.face?.angle||item.pose?'pose':'sin rostro'}</span></div>
+      <div class="photoBody"><div class="name">${escapeHtml(item.name)}</div>
+        <div class="facts">
+          <div class="fact"><kbd>res</kbd><span>${item.image.megapixels||0} MP</span></div>
+          <div class="fact"><kbd>sharp</kbd><span>${Math.round(item.image.sharpness||0)}</span></div>
+          <div class="fact"><kbd>face</kbd><span>${item.face?Math.round(item.face.box.area*1000)/10+'%':'—'}</span></div>
+          <div class="fact"><kbd>body</kbd><span>${item.pose?.hasFullBody?'full':item.pose?'part':'—'}</span></div>
+        </div>
+        <select>${options}</select>
+        <div class="row"><button class="linkbtn" data-view type="button">ver landmarks</button><button class="linkbtn danger" data-remove type="button">borrar</button></div>
+      </div></article>`;
+  }
 
-  /* ---------- Atributos ---------- */
-  function getAttrs(){ return {
-    ojos:$('a_eyes').value.trim(), piel:$('a_skin').value.trim(),
-    pelo_color:$('a_haircol').value.trim(), pelo_estilo:$('a_hairstyle').value.trim(),
-    vello_facial:$('a_beard').value.trim(), edad:$('a_age').value.trim(),
-    gafas:$('a_glasses').value.trim(), complexion:$('a_build').value.trim(),
-    rasgos:$('a_marks').value.trim() }; }
+  function roleLabel(k){ return ROLE_DEFS.find(r=>r.key===k)?.label || k.replaceAll('_',' '); }
 
-  /* ---------- Generar paquete (master prompt) ---------- */
+  function showPreview(item){
+    els.selectedName.textContent=item.name;
+    els.empty.classList.add('hidden'); els.canvas.classList.remove('hidden');
+    const img=new Image(); img.onload=()=>{
+      const maxW=1100, maxH=820, scale=Math.min(maxW/img.naturalWidth,maxH/img.naturalHeight,1);
+      els.canvas.width=Math.round(img.naturalWidth*scale); els.canvas.height=Math.round(img.naturalHeight*scale);
+      ctx.clearRect(0,0,els.canvas.width,els.canvas.height); ctx.drawImage(img,0,0,els.canvas.width,els.canvas.height);
+      drawFace(item,scale); drawPose(item,scale);
+    }; img.src=item.url;
+  }
+
+  function drawFace(item,scale){
+    if(!item.face) return;
+    const W=els.canvas.width,H=els.canvas.height;
+    ctx.fillStyle='rgba(68,214,255,.75)';
+    const step = Math.max(1, Math.floor(item.face.landmarks.length/100));
+    item.face.landmarks.forEach((p,idx)=>{if(idx%step) return;ctx.beginPath();ctx.arc(p.x*W,p.y*H,1.7,0,Math.PI*2);ctx.fill();});
+    const b=item.face.box; ctx.strokeStyle='rgba(56,230,181,.95)';ctx.lineWidth=2;ctx.strokeRect(b.x*W,b.y*H,b.w*W,b.h*H);
+  }
+
+  function drawPose(item,scale){
+    if(!item.pose) return;
+    const W=els.canvas.width,H=els.canvas.height;
+    const edges=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];
+    ctx.strokeStyle='rgba(255,191,91,.95)';ctx.lineWidth=2;ctx.fillStyle='rgba(255,191,91,.95)';
+    const l=item.pose.landmarks;
+    edges.forEach(([a,b])=>{const A=l[a],B=l[b]; if(!A||!B||(A.visibility??1)<.35||(B.visibility??1)<.35)return; ctx.beginPath();ctx.moveTo(A.x*W,A.y*H);ctx.lineTo(B.x*W,B.y*H);ctx.stroke();});
+    l.forEach(p=>{if((p.visibility??1)<.35)return;ctx.beginPath();ctx.arc(p.x*W,p.y*H,2.6,0,Math.PI*2);ctx.fill();});
+  }
+
+  function renderRefs(){
+    const assigned=state.items.filter(i=>i.role).sort((a,b)=>a.role.localeCompare(b.role));
+    els.refs.innerHTML = assigned.length ? assigned.map(i=>`<div class="mini"><img src="${i.url}"><div><strong>${roleLabel(i.role)}</strong><small>${escapeHtml(i.name)} · score ${i.quality.score}</small></div></div>`).join('') : '<p class="smallnote">Todavía no hay referencias asignadas.</p>';
+  }
+
+  function setPrompt(){
+    els.prompt.value = buildPrompt();
+  }
+
   function buildPrompt(){
-    const at=getAttrs(), ex=getExcluded();
-    const attrLine=(k,v)=>v?`- ${k}: ${v}`:null;
-    const attrs=[ attrLine('Ojos',at.ojos), attrLine('Tono de piel',at.piel),
-      attrLine('Pelo (color)',at.pelo_color), attrLine('Pelo (corte/estilo)',at.pelo_estilo+(at.pelo_estilo?' — ref: foto «Corte reciente»':'')),
-      attrLine('Vello facial',at.vello_facial), attrLine('Edad aprox.',at.edad),
-      attrLine('Gafas',at.gafas), attrLine('Complexión',at.complexion),
-      attrLine('Rasgos distintivos',at.rasgos) ].filter(Boolean);
-    const refs=SLOTS.map(s=>{ const has=!!captures[s.id]; return `- ${s.label}: ${has?'✓ adjunta':'— (falta)'}${s.id==='front'?'  [define la geometría de identidad]':''}`; });
-    const code=dom.spatial.value.trim()||'(genera primero la frontal neutro)';
-    return [
-      '=== PAQUETE DE REGENERACIÓN · SPATIAL_MESH_V1 ===',
-      'Objetivo: recrear de forma CONSISTENTE al mismo sujeto con IA generativa',
-      '(img2img / character reference / IP-Adapter / LoRA). Adjuntar las imágenes del dossier .json.',
-      '',
-      '[ IDENTIDAD GEOMÉTRICA — anclar, no alterar proporciones ]',
-      code,
-      '',
-      '[ ATRIBUTOS ]',
-      ...(attrs.length?attrs:['- (sin atributos especificados)']),
-      '',
-      '[ REFERENCIAS VISUALES ]',
-      ...refs,
-      '',
-      '[ EXCLUIR / OMITIR ]',
-      ex.length?('- '+ex.join('\n- ')):'- (nada marcado)',
-      '',
-      '[ DIRECTRICES PARA LA IA ]',
-      '- Mantener la distancia interocular y el MAPA VERTICAL (V_*) como ancla de identidad.',
-      '- Respetar FACE_W/H, JAW_W y proporciones nariz/boca; estos definen el parecido.',
-      '- Fotorrealista, luz neutra y suave, fondo plano salvo otra indicación.',
-      '- No inventar rasgos no listados; aplicar estrictamente las exclusiones.',
-      '=== FIN ==='
-    ].join('\n');
+    const attrs = getAttrs();
+    const assigned = state.items.filter(i=>i.role).sort((a,b)=>a.role.localeCompare(b.role));
+    const front = state.items.find(i=>i.role==='face_front_neutral') || assigned.find(i=>i.face);
+    const meas = front?.measurements;
+    const refs = assigned.map(i=>`- ${roleLabel(i.role)}: archivo ${safeName(i.role || i.name)}.jpg, calidad ${i.quality.score}/100, ${i.tags.join(', ') || 'sin tags'}`).join('\n') || '- Todavía no hay referencias asignadas.';
+    const measuresTxt = meas ? Object.entries(meas).map(([k,v])=>`- ${k}: ${typeof v==='number'?v:v}`).join('\n') : '- Sin mediciones faciales aún.';
+    return `PAQUETE DE IDENTIDAD VISUAL PARA IA GENERATIVA\n\nObjetivo: recrear a la misma persona con la máxima consistencia posible usando las imágenes adjuntas como referencia principal. No uses las medidas como reemplazo de las fotos: las medidas solo son anclas geométricas.\n\nPRIORIDAD DE REFERENCIAS\n1) Rostro frontal neutro y rostro 3/4 para identidad facial.\n2) Fotos naturales para presencia real, gestos y textura.\n3) Cuerpo completo para complexión y proporciones.\n4) Referencia de pelo para corte, volumen y color actual.\n\nREFERENCIAS INCLUIDAS\n${refs}\n\nDATOS MANUALES\n- Ojos: ${attrs.eyes || 'no indicado'}\n- Piel: ${attrs.skin || 'no indicado'}\n- Pelo color: ${attrs.hairColor || 'no indicado'}\n- Pelo estilo: ${attrs.hairStyle || 'no indicado'}\n- Vello facial: ${attrs.beard || 'no indicado'}\n- Altura / complexión: ${attrs.build || 'no indicado'}\n- Rasgos distintivos: ${attrs.marks || 'no indicado'}\n\nMEDIDAS FACIALES NORMALIZADAS\n${measuresTxt}\n\nEXCLUIR O NO COPIAR\n${attrs.exclude || 'No copiar ropa, fondo, accesorios accidentales, sombras raras ni deformaciones de una foto específica.'}\n\nINSTRUCCIONES DE IDENTIDAD\n- Mantener la estructura de ojos, cejas, nariz, boca, mandíbula, frente y proporción general del rostro.\n- Mantener complexión corporal y postura natural sin exagerar musculatura ni adelgazar/ensanchar el cuerpo.\n- No inventar rasgos nuevos.\n- No fusionar con otra persona.\n- Evitar el efecto “parecido a un primo”: priorizar la identidad de las fotos adjuntas por encima de descripciones genéricas.\n- Si una referencia contradice a otra, priorizar las de mayor calidad y las asignadas como rostro frontal neutro, 3/4 y natural.\n\nResultado esperado: imagen fotorrealista de la misma persona, con identidad facial y corporal consistente, sin copiar necesariamente ropa ni fondo.`;
   }
 
-  /* ---------- Dossier JSON ---------- */
-  function buildDossier(){
-    const caps={}; for(const id in captures){ caps[id]={ role:captures[id].role, dataUrl:captures[id].dataUrl, measures:captures[id].measures||null }; }
-    return { format:'SPATIAL_MESH_DOSSIER', version:1, created:new Date().toISOString(),
-      spatial_code:dom.spatial.value, canonical_measures:canonical,
-      attributes:getAttrs(), exclude:getExcluded(), captures:caps };
+  function getAttrs(){
+    return {eyes:$('eyes').value.trim(),skin:$('skin').value.trim(),hairColor:$('hairColor').value.trim(),hairStyle:$('hairStyle').value.trim(),beard:$('beard').value.trim(),build:$('build').value.trim(),marks:$('marks').value.trim(),exclude:$('exclude').value.trim()};
   }
 
-  /* ---------- Hoja de contactos PNG ---------- */
-  async function buildSheet(){
-    const cols=4, cellW=300, cellH=400, pad=24, head=92;
-    const items=SLOTS.filter(s=>captures[s.id]);
-    const rows=Math.max(1,Math.ceil(items.length/cols));
-    const W=pad*2+cols*cellW+(cols-1)*16, H=head+pad+rows*cellH+(rows-1)*16+pad;
-    const cv=document.createElement('canvas'); cv.width=W; cv.height=H; const c=cv.getContext('2d');
-    c.fillStyle='#080b11'; c.fillRect(0,0,W,H);
-    c.fillStyle='#34e0c4'; c.font='700 26px JetBrains Mono, monospace'; c.fillText('◇ SPATIAL MESH — DOSSIER', pad, 46);
-    const at=getAttrs();
-    c.fillStyle='#62748a'; c.font='13px JetBrains Mono, monospace';
-    const sub=[at.pelo_estilo&&('pelo: '+at.pelo_estilo), at.ojos&&('ojos: '+at.ojos), at.piel&&('piel: '+at.piel)].filter(Boolean).join('   ·   ');
-    c.fillText(sub||'referencias de identidad', pad, 70);
-    await Promise.all(items.map((s,idx)=>new Promise(res=>{
-      const img=new Image();
-      img.onload=()=>{ const col=idx%cols, row=Math.floor(idx/cols);
-        const x=pad+col*(cellW+16), y=head+pad+row*(cellH+16);
-        c.fillStyle='#0e131c'; c.strokeStyle='#1d2735'; c.lineWidth=1;
-        c.fillRect(x,y,cellW,cellH); c.strokeRect(x,y,cellW,cellH);
-        // encajar imagen
-        const iw=img.naturalWidth, ih=img.naturalHeight, ar=iw/ih, box=cellW-16, boxH=cellH-46;
-        let dw=box, dh=box/ar; if(dh>boxH){ dh=boxH; dw=boxH*ar; }
-        c.drawImage(img, x+(cellW-dw)/2, y+8, dw, dh);
-        c.fillStyle='#c8d4e2'; c.font='600 15px Space Grotesk, sans-serif';
-        c.fillText(s.label, x+10, y+cellH-16);
-        if(s.id==='front'){ c.fillStyle='#ff6b5e'; c.font='10px JetBrains Mono'; c.fillText('IDENTIDAD', x+cellW-86, y+cellH-16); }
-        res(); };
-      img.onerror=res; img.src=captures[s.id].dataUrl;
-    })));
-    return new Promise(res=>cv.toBlob(b=>res(b),'image/png'));
+  function updateReport(){
+    els.report.value = JSON.stringify(buildReport(), null, 2);
   }
 
-  /* ---------- Cámara ---------- */
-  function startCamera(){
-    if(typeof Camera==='undefined'){ setStatus('nofind','utilidad de cámara no disponible'); return; }
-    navigator.mediaUsed=true; fitStage(640,480);
-    const stream=navigator.mediaDevices.getUserMedia({video:{width:640,height:480}});
-    stream.then(s=>{ dom.video.srcObject=s; dom.video.play(); camOn=true; dom.btnCam.dataset.on='true';
-      dom.btnCam.textContent='■ detener'; dom.btnSnap.disabled=false; setStatus('ready','cámara activa');
-      const loop=()=>{ if(!camOn) return; fitStage(dom.video.videoWidth||640,dom.video.videoHeight||480);
-        ctx.drawImage(dom.video,0,0,dom.stage.width,dom.stage.height); camRAF=requestAnimationFrame(loop); }; loop();
-    }).catch(e=>{ console.error(e); setStatus('nofind','sin acceso a la cámara'); });
+  function buildReport(){
+    return {
+      format:'IDENTITY_DOSSIER_REPORT', version:'1.0-mvp', created:new Date().toISOString(),
+      totals:{photos:state.items.length, good:state.items.filter(i=>i.quality.score>=72).length, assigned:state.items.filter(i=>i.role).length},
+      attributes:getAttrs(),
+      references:Object.fromEntries(state.items.filter(i=>i.role).map(i=>[i.role,{file:i.name,score:i.quality.score,tags:i.tags}])),
+      photos:state.items.map(i=>({id:i.id,file:i.name,role:i.role||null,quality:i.quality,image:i.image,face:i.face?{angle:i.face.angle,smile:i.face.smile,noseOffset:i.face.noseOffset,box:i.face.box}:null,pose:i.pose?{visible:i.pose.visible,hasFullBody:i.pose.hasFullBody,shoulderW:i.pose.shoulderW,hipW:i.pose.hipW}:null,measurements:i.measurements}))
+    };
   }
-  function stopCamera(){ camOn=false; if(camRAF) cancelAnimationFrame(camRAF);
-    if(dom.video.srcObject){ dom.video.srcObject.getTracks().forEach(t=>t.stop()); dom.video.srcObject=null; }
-    dom.btnCam.dataset.on='false'; dom.btnCam.textContent='● cámara'; dom.btnSnap.disabled=true; }
-  function snap(){ const target=activeSlot|| (SLOTS.find(s=>!captures[s.id])||SLOTS[0]).id;
-    const off=document.createElement('canvas'); off.width=dom.video.videoWidth||640; off.height=dom.video.videoHeight||480;
-    off.getContext('2d').drawImage(dom.video,0,0,off.width,off.height);
-    const url=off.toDataURL('image/jpeg',0.92); stopCamera(); receive(target,url); }
 
-  /* ---------- Listeners globales ---------- */
-  dom.fileInput.addEventListener('change',e=>{ const f=e.target.files[0]; if(f&&pickTarget) fileToReceive(pickTarget,f); pickTarget=null; dom.fileInput.value=''; });
-  dom.btnCam.addEventListener('click',()=>{ camOn?stopCamera():startCamera(); });
-  dom.btnSnap.addEventListener('click',snap);
+  async function downloadZip(){
+    if(!state.items.length){alert('Primero cargá fotos.');return;}
+    setPrompt(); updateReport();
+    const zip = new JSZip();
+    zip.file('manifest.json', JSON.stringify(buildReport(), null, 2));
+    zip.file('prompt_chatgpt.txt', els.prompt.value);
+    zip.file('quality_report.json', els.report.value);
+    zip.file('README.txt', 'Dossier visual creado con Identity Dossier Builder. Para mejores resultados, adjuntar las imágenes de /refs junto con prompt_chatgpt.txt. Las mediciones no sustituyen a las fotos.');
+    const refsFolder=zip.folder('refs'), originals=zip.folder('originals'), analysis=zip.folder('analysis'), crops=zip.folder('crops');
+    for(const item of state.items){ originals.file(safeName(item.name), item.file); }
+    const assigned=state.items.filter(i=>i.role);
+    for(const item of assigned){ refsFolder.file(safeName(item.role)+'.jpg', await imageBlob(item, 1800, .93)); }
+    const faceAnalysis = Object.fromEntries(state.items.filter(i=>i.face).map(i=>[i.role||i.name,{landmarks:i.face.landmarks,blendshapes:i.face.blendshapes,measurements:i.measurements,angle:i.face.angle,box:i.face.box}]));
+    const poseAnalysis = Object.fromEntries(state.items.filter(i=>i.pose).map(i=>[i.role||i.name,{landmarks:i.pose.landmarks,worldLandmarks:i.pose.worldLandmarks,summary:{visible:i.pose.visible,hasFullBody:i.pose.hasFullBody,shoulderW:i.pose.shoulderW,hipW:i.pose.hipW}}]));
+    analysis.file('face_landmarks.json', JSON.stringify(faceAnalysis,null,2));
+    analysis.file('pose_landmarks.json', JSON.stringify(poseAnalysis,null,2));
+    analysis.file('face_measurements.json', JSON.stringify(Object.fromEntries(state.items.filter(i=>i.measurements).map(i=>[i.role||i.name,i.measurements])),null,2));
+    for(const item of assigned.filter(i=>i.face).slice(0,10)){ const crop = await faceCropBlob(item); if(crop) crops.file('face_crop_'+safeName(item.role||item.name)+'.jpg', crop); }
+    const sheet = await makeContactSheetBlob(); if(sheet) zip.file('contact_sheet.png', sheet);
+    updateProgress(0,1,'comprimiendo zip');
+    const blob = await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}}, meta=>{els.progressBar.style.width=(meta.percent||0)+'%';els.progressText.textContent='Generando ZIP: '+Math.round(meta.percent||0)+'%';});
+    downloadBlob(blob,'identity_dossier.zip');
+    updateProgress(state.items.length,state.items.length,'zip listo');
+  }
 
-  dom.btnCopyCode.addEventListener('click',async()=>{ try{ await navigator.clipboard.writeText(dom.spatial.value);}catch(e){ dom.spatial.select(); document.execCommand('copy'); } toast(dom.toastCode); });
-  dom.btnRebuild.addEventListener('click',()=>rebuild(parseCode(dom.spatial.value)));
-  dom.spatial.addEventListener('input',()=>rebuild(parseCode(dom.spatial.value)));
+  async function downloadContactSheet(){
+    const blob = await makeContactSheetBlob();
+    if(!blob){alert('No hay referencias para crear hoja.');return;}
+    downloadBlob(blob,'contact_sheet.png');
+  }
 
-  dom.btnGen.addEventListener('click',()=>{ dom.package.value=buildPrompt(); setStatus('lock','paquete generado'); });
-  dom.btnCopyPkg.addEventListener('click',async()=>{ if(!dom.package.value) dom.package.value=buildPrompt();
-    try{ await navigator.clipboard.writeText(dom.package.value);}catch(e){ dom.package.select(); document.execCommand('copy'); } toast(dom.toastPkg); });
-  dom.btnDossier.addEventListener('click',()=>{ const blob=new Blob([JSON.stringify(buildDossier(),null,2)],{type:'application/json'});
-    download('spatial_mesh_dossier.json',blob); });
-  dom.btnSheet.addEventListener('click',async()=>{ if(!Object.keys(captures).length){ setStatus('nofind','no hay capturas aún'); return; }
-    setStatus('loading','componiendo hoja…'); const blob=await buildSheet(); download('spatial_mesh_contact_sheet.png',blob); setStatus('lock','hoja exportada'); });
+  async function makeContactSheetBlob(){
+    const items=state.items.filter(i=>i.role).slice(0,16);
+    if(!items.length) return null;
+    const cellW=360, cellH=480, gap=18, pad=28, head=100, cols=4, rows=Math.ceil(items.length/cols);
+    const canvas=document.createElement('canvas'); canvas.width=pad*2+cols*cellW+gap*(cols-1); canvas.height=head+pad+rows*cellH+gap*(rows-1)+pad;
+    const c=canvas.getContext('2d'); c.fillStyle='#070a10'; c.fillRect(0,0,canvas.width,canvas.height);
+    c.fillStyle='#38e6b5'; c.font='800 30px ui-monospace, monospace'; c.fillText('IDENTITY DOSSIER · REFERENCES', pad, 48);
+    c.fillStyle='#8a9ab0'; c.font='15px ui-monospace, monospace'; c.fillText(new Date().toLocaleString('es-UY')+' · '+items.length+' referencias seleccionadas', pad, 76);
+    for(let idx=0;idx<items.length;idx++){
+      const item=items[idx], img=await loadImage(item.url); const col=idx%cols,row=Math.floor(idx/cols), x=pad+col*(cellW+gap), y=head+pad+row*(cellH+gap);
+      c.fillStyle='#101826'; c.fillRect(x,y,cellW,cellH); c.strokeStyle='#243247'; c.strokeRect(x,y,cellW,cellH);
+      coverDraw(c,img,x+10,y+10,cellW-20,cellH-72);
+      c.fillStyle='#d8e3f1'; c.font='700 18px Arial'; c.fillText(roleLabel(item.role).slice(0,34), x+14, y+cellH-38);
+      c.fillStyle='#8a9ab0'; c.font='12px ui-monospace, monospace'; c.fillText('score '+item.quality.score+' · '+(item.tags.join(', ').slice(0,44)), x+14, y+cellH-17);
+    }
+    return new Promise(res=>canvas.toBlob(res,'image/png'));
+  }
 
-  /* ---------- init ---------- */
-  renderBays(); updateProgress();
-  </script>
+  async function imageBlob(item,max=1800,quality=.92){
+    const img=await loadImage(item.url); const s=Math.min(max/img.naturalWidth,max/img.naturalHeight,1);
+    const canvas=document.createElement('canvas'); canvas.width=Math.round(img.naturalWidth*s); canvas.height=Math.round(img.naturalHeight*s);
+    canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+    return new Promise(res=>canvas.toBlob(res,'image/jpeg',quality));
+  }
+
+  async function faceCropBlob(item){
+    if(!item.face) return null;
+    const img=await loadImage(item.url); const b=item.face.box;
+    const pad=.22; let x=(b.x-pad*b.w)*img.naturalWidth, y=(b.y-pad*b.h)*img.naturalHeight, w=b.w*(1+pad*2)*img.naturalWidth, h=b.h*(1+pad*2)*img.naturalHeight;
+    x=Math.max(0,x); y=Math.max(0,y); w=Math.min(img.naturalWidth-x,w); h=Math.min(img.naturalHeight-y,h);
+    const canvas=document.createElement('canvas'); canvas.width=720; canvas.height=900; const c=canvas.getContext('2d'); c.fillStyle='#111'; c.fillRect(0,0,720,900); coverDraw(c,img,0,0,720,900,{sx:x,sy:y,sw:w,sh:h});
+    return new Promise(res=>canvas.toBlob(res,'image/jpeg',.94));
+  }
+
+  function coverDraw(c,img,x,y,w,h,crop=null){
+    if(crop){c.drawImage(img,crop.sx,crop.sy,crop.sw,crop.sh,x,y,w,h);return;}
+    const ar=img.naturalWidth/img.naturalHeight, br=w/h; let sx=0,sy=0,sw=img.naturalWidth,sh=img.naturalHeight;
+    if(ar>br){sw=img.naturalHeight*br;sx=(img.naturalWidth-sw)/2;} else {sh=img.naturalWidth/br;sy=(img.naturalHeight-sh)/2;}
+    c.drawImage(img,sx,sy,sw,sh,x,y,w,h);
+  }
+
+  async function estimateSharpness(img){
+    const max=240, s=Math.min(max/img.naturalWidth,max/img.naturalHeight,1);
+    const canvas=document.createElement('canvas'); canvas.width=Math.max(1,Math.round(img.naturalWidth*s)); canvas.height=Math.max(1,Math.round(img.naturalHeight*s));
+    const c=canvas.getContext('2d',{willReadFrequently:true}); c.drawImage(img,0,0,canvas.width,canvas.height);
+    const data=c.getImageData(0,0,canvas.width,canvas.height).data; const w=canvas.width,h=canvas.height; let sum=0,sumSq=0,n=0;
+    const gray=(idx)=>0.299*data[idx]+0.587*data[idx+1]+0.114*data[idx+2];
+    for(let y=1;y<h-1;y+=2){for(let x=1;x<w-1;x+=2){const i=(y*w+x)*4; const lap=gray(i-w*4)+gray(i+w*4)+gray(i-4)+gray(i+4)-4*gray(i); sum+=lap; sumSq+=lap*lap; n++;}}
+    const mean=sum/n; return +(sumSq/n-mean*mean).toFixed(2);
+  }
+
+  function updateProgress(done,total,label){
+    const pct=total?Math.round(done/total*100):0; els.progressBar.style.width=pct+'%'; els.progressText.textContent=label ? `${label}: ${done}/${total}` : `${done}/${total}`;
+  }
+  function loadImage(src){return new Promise((res,rej)=>{const img=new Image(); img.onload=()=>res(img); img.onerror=rej; img.src=src;});}
+  function midpoint(a,b){return {x:(a.x+b.x)/2,y:(a.y+b.y)/2,z:((a.z||0)+(b.z||0))/2};}
+  function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
+  function delay(ms){return new Promise(r=>setTimeout(r,ms));}
+  function escapeHtml(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+  function safeName(s){return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,80) || 'file';}
+  function downloadBlob(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),3000);}
+  async function copyText(text){try{return await navigator.clipboard.writeText(text);}catch(e){const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();}}
+  function showTab(tab){
+    document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+    $('panelPrompt').classList.toggle('hidden',tab!=='prompt'); $('panelReport').classList.toggle('hidden',tab!=='report'); $('panelRefs').classList.toggle('hidden',tab!=='refs');
+    if(tab==='report') updateReport(); if(tab==='prompt') setPrompt(); if(tab==='refs') renderRefs();
+  }
+</script>
 </body>
 </html>
