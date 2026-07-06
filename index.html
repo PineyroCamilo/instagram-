@@ -1,40 +1,39 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Identity Dossier Builder · IA regenerativa</title>
-  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" crossorigin="anonymous"></script>
-  <style>
-    :root{
-      --bg:#070a10; --bg2:#0b111b; --panel:#101826; --panel2:#151f31; --line:#243247;
-      --text:#d8e3f1; --muted:#8a9ab0; --faint:#5b6a80; --good:#38e6b5; --warn:#ffbf5b;
-      --bad:#ff6b6b; --accent:#7c8cff; --cyan:#44d6ff; --radius:16px;
-      --mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
-      --sans:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;background:radial-gradient(1000px 600px at 18% -10%,rgba(124,140,255,.19),transparent 55%),radial-gradient(900px 600px at 95% 10%,rgba(68,214,255,.10),transparent 50%),var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh}
-    body:before{content:"";position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:42px 42px;mask-image:radial-gradient(circle at 50% 10%,#000 10%,transparent 70%)}
-    header{position:sticky;top:0;z-index:20;background:rgba(7,10,16,.78);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
-    .bar{max-width:1540px;margin:auto;display:flex;align-items:center;gap:18px;padding:14px 18px}
-    .brand{display:flex;align-items:center;gap:12px;min-width:0}.mark{font-family:var(--mono);font-size:12px;letter-spacing:.16em;color:#07100d;background:linear-gradient(135deg,var(--good),var(--cyan));padding:7px 10px;border-radius:999px;font-weight:800}.brand h1{font-size:16px;margin:0;line-height:1.1}.brand small{display:block;color:var(--muted);font-weight:500;margin-top:3px}.status{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:8px 12px;background:var(--bg2);display:flex;align-items:center;gap:8px}.dot{width:8px;height:8px;border-radius:50%;background:var(--warn);box-shadow:0 0 14px var(--warn)}.dot.ready{background:var(--good);box-shadow:0 0 14px var(--good)}.dot.fail{background:var(--bad);box-shadow:0 0 14px var(--bad)}
-    main{max-width:1540px;margin:auto;padding:18px;display:grid;grid-template-columns:390px minmax(0,1fr);gap:18px}@media(max-width:1050px){main{grid-template-columns:1fr}}
-    .card{background:linear-gradient(180deg,rgba(16,24,38,.96),rgba(11,17,27,.96));border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 22px 80px rgba(0,0,0,.25);overflow:hidden}.head{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}.head b{font-size:14px}.head span{margin-left:auto;color:var(--faint);font-family:var(--mono);font-size:11px}.body{padding:16px}.stack{display:flex;flex-direction:column;gap:14px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:11px;padding:10px 13px;cursor:pointer;font:700 12px var(--mono);letter-spacing:.04em;transition:.16s}.btn:hover{border-color:var(--cyan);color:var(--cyan)}.btn.primary{background:linear-gradient(135deg,var(--good),var(--cyan));color:#051011;border-color:transparent}.btn.warn{border-color:rgba(255,191,91,.35);color:var(--warn)}.btn:disabled{opacity:.45;cursor:not-allowed}
-    .drop{border:1.5px dashed #3a4d68;background:rgba(68,214,255,.045);border-radius:16px;min-height:172px;display:flex;align-items:center;justify-content:center;text-align:center;padding:22px;cursor:pointer}.drop.hot{border-color:var(--good);background:rgba(56,230,181,.08)}.drop h2{margin:0 0 7px;font-size:20px}.drop p{margin:0;color:var(--muted);line-height:1.45}.drop code{color:var(--cyan);font-family:var(--mono)}
-    .field label{display:block;font:700 10px var(--mono);letter-spacing:.12em;color:var(--faint);text-transform:uppercase;margin-bottom:7px}.field input,.field textarea,.field select{width:100%;border:1px solid var(--line);background:#080d15;color:var(--text);border-radius:11px;padding:10px 11px;font:14px var(--sans)}.field textarea{min-height:74px;resize:vertical;font-family:var(--sans)}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.metric{border:1px solid var(--line);background:#090f18;border-radius:14px;padding:11px}.metric .k{font:700 10px var(--mono);color:var(--faint);letter-spacing:.1em;text-transform:uppercase}.metric .v{font:800 22px var(--mono);margin-top:5px}.metric .v.good{color:var(--good)}.metric .v.warn{color:var(--warn)}.metric .v.bad{color:var(--bad)}
-    .roles{display:grid;grid-template-columns:1fr;gap:9px}.roleline{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:10px;background:#080d15}.roleline strong{font-size:13px}.roleline small{display:block;color:var(--faint);font-family:var(--mono);font-size:10px;margin-top:2px}.pill{font:800 11px var(--mono);border-radius:999px;padding:5px 8px;color:#06100d;background:var(--good)}.pill.empty{background:#263247;color:var(--muted)}
-    .galleryTop{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.galleryTop .search{margin-left:auto;min-width:210px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(212px,1fr));gap:14px;padding:16px}.photo{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#080d15}.thumb{position:relative;aspect-ratio:4/5;background:#05070c;display:flex;align-items:center;justify-content:center}.thumb img{width:100%;height:100%;object-fit:cover}.badge{position:absolute;top:9px;left:9px;font:800 11px var(--mono);border-radius:999px;padding:6px 8px;background:rgba(7,10,16,.82);backdrop-filter:blur(4px)}.badge.good{color:var(--good);border:1px solid rgba(56,230,181,.35)}.badge.warn{color:var(--warn);border:1px solid rgba(255,191,91,.35)}.badge.bad{color:var(--bad);border:1px solid rgba(255,107,107,.35)}.angle{position:absolute;right:9px;top:9px;font:800 10px var(--mono);color:var(--text);background:rgba(7,10,16,.82);border:1px solid var(--line);border-radius:999px;padding:6px 8px}.photoBody{padding:11px}.photoBody .name{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:9px}.facts{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:9px 0}.fact{border:1px solid rgba(255,255,255,.05);border-radius:9px;padding:6px;background:rgba(255,255,255,.025)}.fact kbd{font:700 9px var(--mono);color:var(--faint);display:block;text-transform:uppercase}.fact span{font:800 12px var(--mono)}.photo select{margin-top:8px}.linkbtn{background:transparent;border:0;color:var(--cyan);font:700 12px var(--mono);cursor:pointer;padding:7px 0}.danger{color:var(--bad)}
-    .workspace{display:grid;grid-template-columns:minmax(0,1.2fr) 420px;gap:18px}@media(max-width:1200px){.workspace{grid-template-columns:1fr}}
-    .preview{min-height:420px;position:relative;background:repeating-linear-gradient(0deg,transparent 0 34px,rgba(255,255,255,.025) 34px 35px),repeating-linear-gradient(90deg,transparent 0 34px,rgba(255,255,255,.025) 34px 35px),#070b12;display:flex;align-items:center;justify-content:center}.preview canvas{max-width:100%;max-height:70vh;display:block}.empty{text-align:center;color:var(--faint);font-family:var(--mono);line-height:1.7;padding:30px}.tabs{display:flex;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}.tab{font:800 11px var(--mono);letter-spacing:.05em;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:8px 10px;cursor:pointer;background:#080d15}.tab.active{color:#06100d;background:var(--good);border-color:transparent}.code{width:100%;min-height:270px;border:1px solid var(--line);background:#060a10;color:#b9ffe7;border-radius:14px;padding:14px;font:12px/1.55 var(--mono);resize:vertical}.smallnote{font-size:12px;color:var(--muted);line-height:1.5}.warnbox{border:1px solid rgba(255,191,91,.35);background:rgba(255,191,91,.07);border-radius:14px;padding:12px;color:#ffe0ad;font-size:13px;line-height:1.55}.footnote{font-size:11px;color:var(--faint);line-height:1.45}.progress{height:7px;background:#080d15;border:1px solid var(--line);border-radius:999px;overflow:hidden}.progress span{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--good),var(--cyan));transition:.18s}.hidden{display:none!important}.refActions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.miniList{display:flex;flex-direction:column;gap:8px;max-height:280px;overflow:auto}.mini{display:grid;grid-template-columns:44px 1fr;gap:9px;align-items:center;border:1px solid var(--line);background:#080d15;border-radius:12px;padding:7px}.mini img{width:44px;height:54px;object-fit:cover;border-radius:8px}.mini strong{font-size:12px}.mini small{display:block;color:var(--faint);font-family:var(--mono);font-size:10px;margin-top:2px}
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Clone Dossier MAX · Piñeyro</title>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" crossorigin="anonymous"></script>
+<style>
+  :root{
+    --bg:#06080d; --bg2:#0a0f18; --panel:#0f1724; --panel2:#141f30; --panel3:#19263a;
+    --line:#26364f; --line2:#31445f; --text:#dfe9f6; --muted:#91a2b9; --faint:#607088;
+    --good:#38e6b5; --cyan:#4cc9ff; --warn:#ffc45f; --bad:#ff6b6b; --violet:#9a8cff;
+    --radius:18px; --mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+    --sans:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  }
+  *{box-sizing:border-box} html{scroll-behavior:smooth}
+  body{margin:0;min-height:100vh;background:radial-gradient(1050px 720px at 15% -10%,rgba(76,201,255,.18),transparent 58%),radial-gradient(960px 650px at 110% 5%,rgba(56,230,181,.12),transparent 54%),radial-gradient(900px 650px at 55% 110%,rgba(154,140,255,.10),transparent 58%),var(--bg);color:var(--text);font-family:var(--sans);}
+  body:before{content:"";position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:44px 44px;mask-image:radial-gradient(circle at 50% 0%,#000 15%,transparent 76%)}
+  header{position:sticky;top:0;z-index:30;background:rgba(6,8,13,.78);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+  .bar{max-width:1640px;margin:auto;display:flex;align-items:center;gap:16px;padding:13px 18px}.brand{display:flex;align-items:center;gap:12px;min-width:0}.mark{font-family:var(--mono);font-size:12px;letter-spacing:.16em;color:#03110d;background:linear-gradient(135deg,var(--good),var(--cyan));padding:8px 11px;border-radius:999px;font-weight:900;box-shadow:0 0 30px rgba(56,230,181,.18)}.brand h1{font-size:16px;margin:0;line-height:1.15;white-space:nowrap}.brand small{display:block;color:var(--muted);font-weight:500;margin-top:3px;white-space:normal}.status{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:8px 12px;background:var(--bg2);display:flex;align-items:center;gap:8px;white-space:nowrap}.dot{width:8px;height:8px;border-radius:50%;background:var(--warn);box-shadow:0 0 14px var(--warn)}.dot.ready{background:var(--good);box-shadow:0 0 14px var(--good)}.dot.fail{background:var(--bad);box-shadow:0 0 14px var(--bad)}
+  main{max-width:1640px;margin:auto;padding:18px;display:grid;grid-template-columns:410px minmax(0,1fr);gap:18px}@media(max-width:1120px){main{grid-template-columns:1fr}.brand h1{white-space:normal}.status{margin-left:0}.bar{flex-wrap:wrap}}
+  .stack{display:flex;flex-direction:column;gap:16px}.card{background:linear-gradient(180deg,rgba(15,23,36,.96),rgba(10,15,24,.96));border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 24px 90px rgba(0,0,0,.28);overflow:hidden}.head{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}.head b{font-size:14px}.head span{margin-left:auto;color:var(--faint);font-family:var(--mono);font-size:11px}.body{padding:16px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:12px;padding:10px 13px;cursor:pointer;font:800 12px var(--mono);letter-spacing:.04em;transition:.16s;user-select:none}.btn:hover{border-color:var(--cyan);color:var(--cyan);transform:translateY(-1px)}.btn.primary{background:linear-gradient(135deg,var(--good),var(--cyan));color:#03100d;border-color:transparent}.btn.warn{border-color:rgba(255,196,95,.35);color:var(--warn)}.btn.bad{border-color:rgba(255,107,107,.38);color:var(--bad)}.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}.ghost{background:transparent}.drop{border:1.5px dashed #3b536f;background:rgba(76,201,255,.045);border-radius:18px;min-height:178px;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;cursor:pointer;transition:.16s}.drop.hot{border-color:var(--good);background:rgba(56,230,181,.08)}.drop h2{margin:0 0 8px;font-size:20px}.drop p{margin:0;color:var(--muted);line-height:1.5}.drop code{color:var(--cyan);font-family:var(--mono)}
+  .field label{display:block;font:800 10px var(--mono);letter-spacing:.12em;color:var(--faint);text-transform:uppercase;margin-bottom:7px}.field input,.field textarea,.field select{width:100%;border:1px solid var(--line);background:#070c13;color:var(--text);border-radius:12px;padding:10px 11px;font:14px var(--sans);outline:none}.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(76,201,255,.07)}.field textarea{min-height:78px;resize:vertical}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.three{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}@media(max-width:520px){.two,.three{grid-template-columns:1fr}}
+  .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{border:1px solid var(--line);background:#080e17;border-radius:15px;padding:11px}.metric .k{font:800 10px var(--mono);color:var(--faint);letter-spacing:.1em;text-transform:uppercase}.metric .v{font:900 23px var(--mono);margin-top:5px}.metric .v.good{color:var(--good)}.metric .v.warn{color:var(--warn)}.metric .v.bad{color:var(--bad)}@media(max-width:680px){.metrics{grid-template-columns:repeat(2,1fr)}}
+  .readiness{height:9px;border:1px solid var(--line);border-radius:999px;background:#070c13;overflow:hidden}.readiness span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--bad),var(--warn),var(--good));transition:.25s}.progress{height:8px;background:#070c13;border:1px solid var(--line);border-radius:999px;overflow:hidden}.progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--good),var(--cyan));transition:.18s}.note{font-size:12px;color:var(--muted);line-height:1.5}.warnbox{border:1px solid rgba(255,196,95,.35);background:rgba(255,196,95,.07);border-radius:15px;padding:12px;color:#ffe0a4;font-size:13px;line-height:1.55}.okbox{border:1px solid rgba(56,230,181,.32);background:rgba(56,230,181,.06);border-radius:15px;padding:12px;color:#c5fff0;font-size:13px;line-height:1.55}.badbox{border:1px solid rgba(255,107,107,.34);background:rgba(255,107,107,.06);border-radius:15px;padding:12px;color:#ffd0d0;font-size:13px;line-height:1.55}
+  .roles{display:grid;grid-template-columns:1fr;gap:9px}.roleline{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border:1px solid var(--line);border-radius:13px;padding:10px;background:#080e17}.roleline strong{font-size:13px}.roleline small{display:block;color:var(--faint);font-family:var(--mono);font-size:10px;margin-top:2px}.pill{font:900 11px var(--mono);border-radius:999px;padding:5px 8px;color:#06100d;background:var(--good)}.pill.empty{background:#28374b;color:var(--muted)}.pill.opt{background:var(--violet);color:#090713}.pill.bad{background:var(--bad);color:#160404}.reqTag{font:900 9px var(--mono);letter-spacing:.08em;border-radius:999px;padding:3px 6px;margin-right:6px;background:rgba(255,196,95,.15);color:var(--warn);border:1px solid rgba(255,196,95,.22)}
+  .workspace{display:grid;grid-template-columns:minmax(0,1.12fr) 440px;gap:18px}@media(max-width:1280px){.workspace{grid-template-columns:1fr}}.preview{min-height:460px;position:relative;background:repeating-linear-gradient(0deg,transparent 0 34px,rgba(255,255,255,.025) 34px 35px),repeating-linear-gradient(90deg,transparent 0 34px,rgba(255,255,255,.025) 34px 35px),#060a10;display:flex;align-items:center;justify-content:center}.preview canvas{max-width:100%;max-height:75vh;display:block}.empty{text-align:center;color:var(--faint);font-family:var(--mono);line-height:1.7;padding:30px}.tabs{display:flex;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}.tab{font:900 11px var(--mono);letter-spacing:.05em;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:8px 10px;cursor:pointer;background:#080e17}.tab.active{color:#06100d;background:var(--good);border-color:transparent}.code{width:100%;min-height:310px;border:1px solid var(--line);background:#05090f;color:#b9ffe7;border-radius:15px;padding:14px;font:12px/1.55 var(--mono);resize:vertical;white-space:pre}.miniList{display:flex;flex-direction:column;gap:8px;max-height:360px;overflow:auto}.mini{display:grid;grid-template-columns:48px 1fr;gap:9px;align-items:center;border:1px solid var(--line);background:#080e17;border-radius:13px;padding:7px}.mini img{width:48px;height:58px;object-fit:cover;border-radius:9px}.mini strong{font-size:12px}.mini small{display:block;color:var(--faint);font-family:var(--mono);font-size:10px;margin-top:2px}.checklist{display:flex;flex-direction:column;gap:8px}.check{display:flex;gap:8px;border:1px solid var(--line);background:#080e17;border-radius:12px;padding:9px;font-size:12px;color:var(--muted);align-items:flex-start}.check b{color:var(--text)}.check .ico{font-family:var(--mono);font-weight:900}.check.ok .ico{color:var(--good)}.check.warn .ico{color:var(--warn)}.check.bad .ico{color:var(--bad)}
+  .galleryTop{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.galleryTop .search{margin-left:auto;min-width:230px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;padding:16px}.photo{border:1px solid var(--line);border-radius:17px;overflow:hidden;background:#080e17;transition:.14s}.photo.selected{border-color:var(--good);box-shadow:0 0 0 2px rgba(56,230,181,.14)}.thumb{position:relative;aspect-ratio:4/5;background:#05080d;display:flex;align-items:center;justify-content:center;cursor:pointer}.thumb img{width:100%;height:100%;object-fit:cover}.badge{position:absolute;top:9px;left:9px;font:900 11px var(--mono);border-radius:999px;padding:6px 8px;background:rgba(6,8,13,.84);backdrop-filter:blur(4px)}.badge.good{color:var(--good);border:1px solid rgba(56,230,181,.36)}.badge.warn{color:var(--warn);border:1px solid rgba(255,196,95,.36)}.badge.bad{color:var(--bad);border:1px solid rgba(255,107,107,.36)}.angle{position:absolute;right:9px;top:9px;font:900 10px var(--mono);color:var(--text);background:rgba(6,8,13,.84);border:1px solid var(--line);border-radius:999px;padding:6px 8px;max-width:135px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.roleBadge{position:absolute;left:9px;bottom:9px;right:9px;font:900 10px var(--mono);color:#06100d;background:linear-gradient(135deg,var(--good),var(--cyan));border-radius:10px;padding:7px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.photoBody{padding:11px}.name{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:9px}.facts{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:9px 0}.fact{border:1px solid rgba(255,255,255,.055);border-radius:10px;padding:6px;background:rgba(255,255,255,.025)}.fact kbd{font:800 9px var(--mono);color:var(--faint);display:block;text-transform:uppercase}.fact span{font:900 12px var(--mono)}.photo select{margin-top:8px}.linkbtn{background:transparent;border:0;color:var(--cyan);font:800 12px var(--mono);cursor:pointer;padding:7px 0}.danger{color:var(--bad)}.hidden{display:none!important}.tagline{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.tag{font:800 9px var(--mono);padding:4px 6px;border:1px solid var(--line);border-radius:999px;color:var(--muted);background:#070c13}.toast{position:fixed;right:18px;bottom:18px;background:#07130f;border:1px solid rgba(56,230,181,.35);color:#c5fff0;border-radius:14px;padding:12px 14px;font:800 12px var(--mono);box-shadow:0 14px 60px rgba(0,0,0,.38);z-index:80;opacity:0;transform:translateY(8px);pointer-events:none;transition:.2s}.toast.show{opacity:1;transform:none}
+</style>
 </head>
 <body>
 <header>
   <div class="bar">
     <div class="brand">
-      <div class="mark">ID·DOSSIER</div>
-      <h1>Identity Dossier Builder <small>paquete visual para recreación consistente con IA</small></h1>
+      <div class="mark">CLONE·DOSSIER MAX</div>
+      <h1>Clone Dossier MAX <small>modo clon máximo · anclas visuales + consistencia + ZIP para IA</small></h1>
     </div>
     <div class="status"><span class="dot" id="modelDot"></span><span id="modelStatus">cargando modelos…</span></div>
   </div>
@@ -43,60 +42,62 @@
 <main>
   <aside class="stack">
     <section class="card">
-      <div class="head"><b>01 · Cargar fotos</b><span>20–60 ideal</span></div>
+      <div class="head"><b>01 · Cargar fotos</b><span>40–100 ideal</span></div>
       <div class="body stack">
-        <div class="drop" id="drop">
-          <div>
-            <h2>Arrastrá muchas fotos acá</h2>
-            <p>Frontal, sonrisa, 3/4, perfiles, cuerpo completo, pelo y fotos naturales.<br><code>Todo se procesa en tu navegador.</code></p>
-          </div>
-        </div>
-        <input type="file" id="fileInput" accept="image/*" multiple hidden>
-        <div class="row">
-          <button class="btn primary" id="pickBtn">＋ elegir fotos</button>
-          <button class="btn" id="clearBtn">limpiar</button>
-        </div>
+        <div class="drop" id="drop"><div><h2>Arrastrá muchas fotos acá</h2><p>Frontal neutra, sonrisa, 3/4, perfiles, detalles de ojos/boca, cuerpo completo, pelo y fotos naturales.<br><code>Todo se procesa en tu navegador.</code></p></div></div>
+        <input type="file" id="fileInput" accept="image/*" multiple hidden />
+        <div class="row"><button class="btn primary" id="pickBtn">＋ elegir fotos</button><button class="btn" id="autoAssignBtn">⚙ auto asignar</button><button class="btn bad" id="clearBtn">limpiar</button></div>
         <div class="progress"><span id="progressBar"></span></div>
-        <div class="footnote" id="progressText">Sin fotos cargadas.</div>
+        <div class="note" id="progressText">Sin fotos cargadas.</div>
       </div>
     </section>
 
     <section class="card">
-      <div class="head"><b>02 · Datos manuales</b><span>mejoran el prompt</span></div>
+      <div class="head"><b>02 · Datos manuales</b><span>anclas humanas</span></div>
       <div class="body stack">
-        <div class="two">
-          <div class="field"><label>Ojos</label><input id="eyes" placeholder="marrón claro"></div>
-          <div class="field"><label>Piel</label><input id="skin" placeholder="oliva medio"></div>
-          <div class="field"><label>Pelo color</label><input id="hairColor" placeholder="castaño oscuro"></div>
-          <div class="field"><label>Pelo estilo</label><input id="hairStyle" placeholder="corto, fade, tupé"></div>
-          <div class="field"><label>Vello facial</label><input id="beard" placeholder="barba corta / afeitado"></div>
-          <div class="field"><label>Altura / cuerpo</label><input id="build" placeholder="1.76, atlético"></div>
-        </div>
-        <div class="field"><label>Rasgos distintivos</label><textarea id="marks" placeholder="mandíbula, cejas, nariz, sonrisa, lunares, cicatrices, etc."></textarea></div>
-        <div class="field"><label>Excluir</label><textarea id="exclude" placeholder="ropa puntual, gorra, lentes, fondo, sombras duras, accesorios..."></textarea></div>
+        <div class="two"><div class="field"><label>Nombre/alias del dossier</label><input id="alias" placeholder="Camilo · julio 2026" /></div><div class="field"><label>Edad aprox.</label><input id="age" placeholder="22" /></div></div>
+        <div class="three"><div class="field"><label>Ojos</label><input id="eyes" placeholder="marrón claro" /></div><div class="field"><label>Piel</label><input id="skin" placeholder="oliva medio" /></div><div class="field"><label>Altura</label><input id="height" placeholder="1.76 m" /></div></div>
+        <div class="two"><div class="field"><label>Pelo color</label><input id="hairColor" placeholder="castaño oscuro" /></div><div class="field"><label>Pelo estilo actual</label><input id="hairStyle" placeholder="corto, fade, tupé" /></div></div>
+        <div class="two"><div class="field"><label>Vello facial</label><input id="beard" placeholder="barba corta / afeitado" /></div><div class="field"><label>Complexión</label><input id="build" placeholder="atlético, hombros, torso" /></div></div>
+        <div class="field"><label>Rasgos distintivos estables</label><textarea id="marks" placeholder="cejas, mandíbula, forma de nariz, sonrisa, lunares/cicatrices reales, orejas, frente, entradas, etc."></textarea></div>
+        <div class="field"><label>Excluir / no copiar</label><textarea id="exclude" placeholder="ropa puntual, gorra, lentes, fondo, sombras, accesorios, peinado viejo, gestos raros..."></textarea></div>
       </div>
     </section>
 
     <section class="card">
-      <div class="head"><b>03 · Estado del dossier</b><span>auto</span></div>
+      <div class="head"><b>03 · Calidad del dossier</b><span id="readinessLabel">0%</span></div>
       <div class="body stack">
+        <div class="readiness"><span id="readinessBar"></span></div>
         <div class="metrics">
           <div class="metric"><div class="k">Fotos</div><div class="v" id="mPhotos">0</div></div>
           <div class="metric"><div class="k">Buenas</div><div class="v" id="mGood">0</div></div>
-          <div class="metric"><div class="k">Refs</div><div class="v" id="mRefs">0/9</div></div>
+          <div class="metric"><div class="k">Refs</div><div class="v" id="mRefs">0/16</div></div>
+          <div class="metric"><div class="k">Listo</div><div class="v" id="mReady">0%</div></div>
         </div>
+        <div id="readinessBox" class="warnbox">Cargá fotos para calcular si el dossier está fuerte.</div>
         <div class="roles" id="roles"></div>
-        <button class="btn warn" id="autoAssignBtn">⚙ auto asignar mejores referencias</button>
       </div>
     </section>
 
     <section class="card">
-      <div class="head"><b>04 · Exportar</b><span>ZIP</span></div>
+      <div class="head"><b>04 · Protocolo de captura</b><span>modo clon</span></div>
       <div class="body stack">
-        <button class="btn primary" id="zipBtn">⬇ descargar identity_dossier.zip</button>
+        <div class="okbox"><b>Para máxima fidelidad:</b> cargá varias versiones de cada rol, no una sola. La app elige las mejores, pero vos podés corregir a mano.</div>
+        <div class="note">
+          1) 6–10 frontales neutras · 2) 4 sonriendo · 3) 6 en 3/4 · 4) 4 perfiles · 5) 4 detalles de ojos/boca/pelo · 6) 6 cuerpo completo · 7) 15–30 fotos naturales.
+        </div>
+        <div class="warnbox">Evitá gran angular muy cerca, filtros, selfies deformadas, sombras fuertes, lentes oscuros, gorra y fotos viejas con otro corte.</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="head"><b>05 · Exportar</b><span>ZIP final</span></div>
+      <div class="body stack">
+        <button class="btn primary" id="zipBtn">⬇ descargar clone_dossier_MAX.zip</button>
         <button class="btn" id="contactBtn">⬇ descargar contact_sheet.png</button>
         <button class="btn" id="promptBtn">⧉ copiar prompt</button>
-        <div class="warnbox">Esto mejora muchísimo la consistencia, pero ninguna IA garantiza copia perfecta. Para máximo parecido, el prompt debe ir acompañado por las imágenes del ZIP.</div>
+        <button class="btn ghost" id="reportBtn">⧉ copiar reporte JSON</button>
+        <div class="warnbox"><b>Realismo honesto:</b> esto apunta al máximo parecido posible, no a una garantía mágica. Para acercarse al “clon”, el ZIP debe traer muchas fotos buenas, roles completos y anclas visuales claras. La identidad sale de las imágenes, no del JSON solo.</div>
       </div>
     </section>
   </aside>
@@ -105,478 +106,323 @@
     <div class="workspace">
       <section class="card">
         <div class="head"><b>Previsualización / landmarks</b><span id="selectedName">ninguna foto</span></div>
-        <div class="preview" id="previewWrap">
-          <canvas id="previewCanvas" class="hidden"></canvas>
-          <div class="empty" id="emptyPreview">Seleccioná una foto de la galería para ver landmarks faciales/corporales y control visual.</div>
-        </div>
+        <div class="preview"><canvas id="previewCanvas" class="hidden"></canvas><div class="empty" id="emptyPreview">Seleccioná una foto para ver rostro, cuerpo, cajas, landmarks y control visual.</div></div>
       </section>
-
       <section class="card">
         <div class="tabs">
           <button class="tab active" data-tab="prompt">PROMPT</button>
           <button class="tab" data-tab="report">REPORTE</button>
+          <button class="tab" data-tab="validation">CHECKLIST</button>
           <button class="tab" data-tab="refs">REFERENCIAS</button>
         </div>
-        <div class="body stack" id="panelPrompt">
-          <textarea class="code" id="promptOut" spellcheck="false"></textarea>
-          <div class="row"><button class="btn" id="regenPromptBtn">↻ regenerar prompt</button></div>
-          <p class="smallnote">Este prompt está pensado para pegarlo acá junto al ZIP o las imágenes principales. Las medidas ayudan, pero la identidad debe venir de las referencias visuales.</p>
-        </div>
-        <div class="body stack hidden" id="panelReport">
-          <textarea class="code" id="reportOut" spellcheck="false"></textarea>
-        </div>
-        <div class="body stack hidden" id="panelRefs">
-          <div class="miniList" id="refList"></div>
-        </div>
+        <div class="body stack" id="panelPrompt"><textarea class="code" id="promptOut" spellcheck="false"></textarea><div class="row"><button class="btn" id="regenPromptBtn">↻ regenerar prompt</button></div><p class="note">Pegá este prompt acá junto con el ZIP o, como mínimo, las imágenes de <code>/refs</code> y <code>contact_sheet.png</code>.</p></div>
+        <div class="body stack hidden" id="panelReport"><textarea class="code" id="reportOut" spellcheck="false"></textarea></div>
+        <div class="body stack hidden" id="panelValidation"><div id="validationList" class="checklist"></div></div>
+        <div class="body stack hidden" id="panelRefs"><div class="miniList" id="refList"></div></div>
       </section>
     </div>
-
     <section class="card">
-      <div class="head galleryTop"><b>Galería analizada</b><span id="galleryCount">0 imágenes</span><input class="field search" id="filter" placeholder="filtrar por nombre/rol"></div>
+      <div class="head galleryTop"><b>Galería analizada</b><span id="galleryCount">0 imágenes</span><input class="field search" id="filter" placeholder="filtrar por nombre, rol o tag" /></div>
       <div class="grid" id="gallery"></div>
     </section>
   </section>
 </main>
+<div class="toast" id="toast">listo</div>
 
 <script type="module">
   import { FaceLandmarker, PoseLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest";
 
   const ROLE_DEFS = [
-    {key:'face_front_neutral', label:'Rostro frontal neutro', must:'cara grande, frontal, expresión tranquila'},
-    {key:'face_front_smile', label:'Rostro frontal sonrisa', must:'sonrisa natural'},
-    {key:'face_3_4_left', label:'Rostro 3/4 izquierda', must:'volumen lateral'},
-    {key:'face_3_4_right', label:'Rostro 3/4 derecha', must:'volumen lateral'},
-    {key:'profile_left', label:'Perfil izquierdo', must:'perfil real'},
-    {key:'profile_right', label:'Perfil derecho', must:'perfil real'},
-    {key:'body_front', label:'Cuerpo completo frontal', must:'proporción corporal'},
-    {key:'body_side', label:'Cuerpo lateral', must:'volumen corporal'},
-    {key:'hair_reference', label:'Pelo actual', must:'corte, color, textura'}
+    {key:'face_front_neutral', label:'Rostro frontal neutro', must:'cara grande, frontal, expresión tranquila', required:true, type:'face'},
+    {key:'face_front_smile', label:'Rostro frontal sonrisa', must:'sonrisa natural y dientes si aplica', required:true, type:'face'},
+    {key:'face_front_serious', label:'Rostro frontal serio', must:'frontal serio/no sonrisa para mandíbula y mirada', required:false, type:'face'},
+    {key:'face_3_4_left', label:'Rostro 3/4 izquierda', must:'volumen lateral izquierdo', required:true, type:'face'},
+    {key:'face_3_4_right', label:'Rostro 3/4 derecha', must:'volumen lateral derecho', required:true, type:'face'},
+    {key:'profile_left', label:'Perfil izquierdo', must:'perfil real, nariz/frente/mentón', required:true, type:'face'},
+    {key:'profile_right', label:'Perfil derecho', must:'perfil real, nariz/frente/mentón', required:true, type:'face'},
+    {key:'eyes_detail', label:'Detalle ojos/cejas', must:'recorte nítido de mirada, párpados y cejas', required:false, type:'face'},
+    {key:'mouth_detail', label:'Detalle boca/sonrisa', must:'recorte nítido de boca, dientes y labios', required:false, type:'face'},
+    {key:'hair_reference', label:'Pelo actual', must:'corte, volumen, color y entradas', required:true, type:'face'},
+    {key:'ear_left', label:'Oreja izquierda', must:'opcional: oreja visible para perfiles', required:false, type:'face'},
+    {key:'ear_right', label:'Oreja derecha', must:'opcional: oreja visible para perfiles', required:false, type:'face'},
+    {key:'body_front', label:'Cuerpo completo frontal', must:'cuerpo entero, pies visibles ideal', required:true, type:'body'},
+    {key:'body_side', label:'Cuerpo lateral', must:'volumen corporal lateral', required:true, type:'body'},
+    {key:'body_back', label:'Cuerpo de espalda', must:'espalda, hombros, postura', required:false, type:'body'},
+    {key:'body_casual', label:'Cuerpo casual natural', must:'postura real no posada', required:false, type:'body'}
   ];
-
-  const $ = (id)=>document.getElementById(id);
-  const state = {items:[], face:null, pose:null, selected:null, modelsReady:false, modelFailed:false, modelPromise:null, busy:false};
+  const NATURAL_COUNT = 12;
+  const ROLE_KEYS = [...ROLE_DEFS.map(r=>r.key), ...Array.from({length:NATURAL_COUNT},(_,i)=>'natural_reference_'+String(i+1).padStart(2,'0'))];
+  const $ = id => document.getElementById(id);
+  const state = {items:[], selected:null, face:null, pose:null, modelsReady:false, modelFailed:false, modelPromise:null, busy:false};
   const els = {
-    dot:$('modelDot'), status:$('modelStatus'), drop:$('drop'), fileInput:$('fileInput'), pick:$('pickBtn'), clear:$('clearBtn'),
-    progressBar:$('progressBar'), progressText:$('progressText'), gallery:$('gallery'), galleryCount:$('galleryCount'), filter:$('filter'),
-    canvas:$('previewCanvas'), empty:$('emptyPreview'), selectedName:$('selectedName'), roles:$('roles'), mPhotos:$('mPhotos'), mGood:$('mGood'), mRefs:$('mRefs'),
-    autoAssign:$('autoAssignBtn'), zip:$('zipBtn'), contact:$('contactBtn'), prompt:$('promptOut'), report:$('reportOut'), refs:$('refList'),
-    regenPrompt:$('regenPromptBtn'), promptBtn:$('promptBtn')
+    dot:$('modelDot'), status:$('modelStatus'), drop:$('drop'), fileInput:$('fileInput'), pick:$('pickBtn'), clear:$('clearBtn'), autoAssign:$('autoAssignBtn'),
+    progressBar:$('progressBar'), progressText:$('progressText'), readinessBar:$('readinessBar'), readinessLabel:$('readinessLabel'), readinessBox:$('readinessBox'), validationList:$('validationList'),
+    gallery:$('gallery'), galleryCount:$('galleryCount'), filter:$('filter'), canvas:$('previewCanvas'), empty:$('emptyPreview'), selectedName:$('selectedName'), roles:$('roles'),
+    mPhotos:$('mPhotos'), mGood:$('mGood'), mRefs:$('mRefs'), mReady:$('mReady'), prompt:$('promptOut'), report:$('reportOut'), refs:$('refList'), toast:$('toast'),
+    zip:$('zipBtn'), contact:$('contactBtn'), promptBtn:$('promptBtn'), reportBtn:$('reportBtn'), regenPrompt:$('regenPromptBtn')
   };
   const ctx = els.canvas.getContext('2d');
+  const FACE_EDGES = [[33,133],[362,263],[61,291],[13,14],[48,278],[10,152],[234,454],[172,397]];
+  const POSE_EDGES = [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[27,31],[24,26],[26,28],[28,32]];
 
   init();
 
-  async function init(){
-    renderRoles();
-    setPrompt();
-    wireEvents();
-    state.modelPromise = loadModels();
-    await state.modelPromise;
-  }
+  async function init(){ renderRoles(); wireEvents(); restoreManualFields(); setPrompt(); renderReadiness(); state.modelPromise=loadModels(); await state.modelPromise; }
 
   async function loadModels(){
     try{
       const vision = await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm');
-      state.face = await FaceLandmarker.createFromOptions(vision, {
-        baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task', delegate:'GPU'},
-        runningMode:'IMAGE', numFaces:1, outputFaceBlendshapes:true, outputFacialTransformationMatrixes:true,
-        minFaceDetectionConfidence:0.45, minFacePresenceConfidence:0.45
-      });
-      state.pose = await PoseLandmarker.createFromOptions(vision, {
-        baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/latest/pose_landmarker_lite.task', delegate:'GPU'},
-        runningMode:'IMAGE', numPoses:1, outputSegmentationMasks:false,
-        minPoseDetectionConfidence:0.45, minPosePresenceConfidence:0.45
-      });
-      state.modelsReady = true;
-      els.dot.className='dot ready'; els.status.textContent='modelos listos';
-    }catch(err){
-      console.error(err);
-      state.modelFailed = true;
-      els.dot.className='dot fail'; els.status.textContent='sin modelos: modo básico';
-    }
+      state.face = await FaceLandmarker.createFromOptions(vision, {baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task', delegate:'GPU'}, runningMode:'IMAGE', numFaces:1, outputFaceBlendshapes:true, outputFacialTransformationMatrixes:true, minFaceDetectionConfidence:0.45, minFacePresenceConfidence:0.45});
+      state.pose = await PoseLandmarker.createFromOptions(vision, {baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/latest/pose_landmarker_lite.task', delegate:'GPU'}, runningMode:'IMAGE', numPoses:1, outputSegmentationMasks:false, minPoseDetectionConfidence:0.45, minPosePresenceConfidence:0.45});
+      state.modelsReady=true; els.dot.className='dot ready'; els.status.textContent='modelos listos';
+    }catch(err){ console.error(err); state.modelFailed=true; els.dot.className='dot fail'; els.status.textContent='modo básico: no cargaron modelos'; }
   }
 
   function wireEvents(){
-    els.pick.onclick=()=>els.fileInput.click();
-    els.fileInput.onchange=(e)=>handleFiles([...e.target.files]);
-    els.clear.onclick=()=>{state.items.forEach(i=>URL.revokeObjectURL(i.url));state.items=[];state.selected=null;renderAll();setPrompt();};
-    ['dragenter','dragover'].forEach(ev=>els.drop.addEventListener(ev,e=>{e.preventDefault();els.drop.classList.add('hot')}));
-    ['dragleave','drop'].forEach(ev=>els.drop.addEventListener(ev,e=>{e.preventDefault();els.drop.classList.remove('hot')}));
-    els.drop.ondrop=(e)=>handleFiles([...e.dataTransfer.files].filter(f=>f.type.startsWith('image/')));
-    els.drop.onclick=()=>els.fileInput.click();
-    els.autoAssign.onclick=autoAssignRoles;
-    els.zip.onclick=downloadZip;
-    els.contact.onclick=downloadContactSheet;
-    els.regenPrompt.onclick=setPrompt;
-    els.promptBtn.onclick=async()=>{setPrompt(); await copyText(els.prompt.value); alert('Prompt copiado');};
-    els.filter.oninput=renderGallery;
-    document.querySelectorAll('.tab').forEach(btn=>btn.onclick=()=>showTab(btn.dataset.tab));
+    els.pick.onclick=()=>els.fileInput.click(); els.fileInput.onchange=e=>handleFiles([...e.target.files]);
+    els.clear.onclick=()=>{ if(!state.items.length) return; if(confirm('¿Limpiar todas las fotos cargadas?')){ state.items.forEach(i=>URL.revokeObjectURL(i.url)); state.items=[]; state.selected=null; renderAll(); setPrompt(); updateProgress(0,0,'sin fotos'); } };
+    ['dragenter','dragover'].forEach(ev=>els.drop.addEventListener(ev,e=>{e.preventDefault(); els.drop.classList.add('hot')}));
+    ['dragleave','drop'].forEach(ev=>els.drop.addEventListener(ev,e=>{e.preventDefault(); els.drop.classList.remove('hot')}));
+    els.drop.ondrop=e=>handleFiles([...e.dataTransfer.files].filter(f=>f.type.startsWith('image/'))); els.drop.onclick=()=>els.fileInput.click();
+    els.autoAssign.onclick=()=>autoAssignRoles(true); els.zip.onclick=downloadZip; els.contact.onclick=downloadContactSheet; els.regenPrompt.onclick=setPrompt;
+    els.promptBtn.onclick=async()=>{ setPrompt(); await copyText(els.prompt.value); showToast('prompt copiado'); };
+    els.reportBtn.onclick=async()=>{ updateReport(); await copyText(els.report.value); showToast('reporte copiado'); };
+    els.filter.oninput=renderGallery; document.querySelectorAll('.tab').forEach(btn=>btn.onclick=()=>showTab(btn.dataset.tab));
+    ['alias','age','eyes','skin','height','hairColor','hairStyle','beard','build','marks','exclude'].forEach(id=>$(id).addEventListener('input',()=>{saveManualFields(); setPrompt(); updateReport(); renderReadiness();}));
   }
 
   async function handleFiles(files){
+    files = files.filter(f=>f && f.type.startsWith('image/'));
     if(!files.length) return;
+    const existingKeys = new Set(state.items.map(i=>i.fileKey));
+    files = files.filter(f=>!existingKeys.has(f.name+'_'+f.size+'_'+f.lastModified));
+    if(!files.length){ showToast('esas fotos ya estaban cargadas'); return; }
     state.busy=true;
-    if(!state.modelsReady && !state.modelFailed && state.modelPromise){
-      updateProgress(0, files.length, 'esperando modelos');
-      await Promise.race([state.modelPromise, delay(10000)]);
-    }
-    const start = state.items.length;
+    if(!state.modelsReady && !state.modelFailed && state.modelPromise){ updateProgress(0,files.length,'esperando modelos'); await Promise.race([state.modelPromise, delay(12000)]); }
+    const start=state.items.length;
     for(let idx=0; idx<files.length; idx++){
-      const file = files[idx];
-      const item = makeItem(file);
-      state.items.push(item);
-      updateProgress(start+idx, start+files.length, 'decodificando');
-      try{ await analyzeItem(item); }catch(err){ console.error(err); item.error=String(err); item.quality.label='error'; item.quality.score=0; }
-      renderAll(false);
-      await delay(20);
+      const item=makeItem(files[idx]); state.items.push(item); updateProgress(idx+1,files.length,'analizando');
+      try{ await analyzeItem(item); }catch(err){ console.error(err); item.error=String(err); item.quality={score:0,label:'error',reasons:['error al analizar']}; }
+      renderAll(false); await delay(15);
     }
-    state.busy=false;
-    updateProgress(state.items.length, state.items.length, 'listo');
-    autoAssignRoles(false);
-    renderAll(); setPrompt();
+    state.busy=false; updateProgress(state.items.length,state.items.length,'listo'); autoAssignRoles(false); renderAll(); setPrompt(); showToast('análisis terminado');
   }
 
-  function makeItem(file){
-    const id = crypto.randomUUID ? crypto.randomUUID() : 'id_'+Date.now()+'_'+Math.random().toString(16).slice(2);
-    return {id,file,name:file.name,url:URL.createObjectURL(file),role:'',manual:false,quality:{score:0,label:'pendiente'},image:{},face:null,pose:null,measurements:null,tags:[]};
-  }
+  function makeItem(file){ const id = crypto.randomUUID ? crypto.randomUUID() : 'id_'+Date.now()+'_'+Math.random().toString(16).slice(2); return {id,file,fileKey:file.name+'_'+file.size+'_'+file.lastModified,name:file.name,url:URL.createObjectURL(file),role:'',manual:false,quality:{score:0,label:'pendiente',reasons:[]},image:{},face:null,pose:null,measurements:null,bodyMeasurements:null,fingerprint:null,tags:[]}; }
 
   async function analyzeItem(item){
-    const img = await loadImage(item.url);
-    item.image = {width:img.naturalWidth, height:img.naturalHeight, megapixels:+((img.naturalWidth*img.naturalHeight)/1e6).toFixed(2)};
-    const sharpness = await estimateSharpness(img);
-    item.image.sharpness = sharpness;
-
-    if(state.modelsReady){
-      const faceRes = state.face.detect(img);
-      const poseRes = state.pose.detect(img);
-      item.face = summarizeFace(faceRes, img);
-      item.pose = summarizePose(poseRes, img);
-      if(item.face?.landmarks) item.measurements = faceMeasurements(item.face.landmarks, img);
-    }
-    item.quality = scoreImage(item);
-    item.tags = inferTags(item);
+    const img=await loadImage(item.url); item.image={width:img.naturalWidth,height:img.naturalHeight,megapixels:+((img.naturalWidth*img.naturalHeight)/1e6).toFixed(2)};
+    const stats=await estimateImageStats(img); Object.assign(item.image, stats);
+    if(state.modelsReady){ const faceRes=state.face.detect(img); const poseRes=state.pose.detect(img); item.face=summarizeFace(faceRes); item.pose=summarizePose(poseRes); if(item.face?.landmarks) item.measurements=faceMeasurements(item.face.landmarks); if(item.pose?.landmarks) item.bodyMeasurements=bodyMeasurements(item.pose.landmarks); }
+    item.fingerprint=makeFingerprint(item); item.quality=scoreImage(item); item.tags=inferTags(item);
   }
 
-  function summarizeFace(res, img){
-    if(!res?.faceLandmarks?.length) return null;
-    const l = res.faceLandmarks[0];
-    let minX=1,minY=1,maxX=0,maxY=0;
+  function summarizeFace(res){
+    if(!res?.faceLandmarks?.length) return null; const l=res.faceLandmarks[0]; let minX=1,minY=1,maxX=0,maxY=0;
     for(const p of l){ minX=Math.min(minX,p.x); minY=Math.min(minY,p.y); maxX=Math.max(maxX,p.x); maxY=Math.max(maxY,p.y); }
-    const box = {x:minX,y:minY,w:maxX-minX,h:maxY-minY,area:(maxX-minX)*(maxY-minY)};
-    const blend = {};
-    const cats = res.faceBlendshapes?.[0]?.categories || [];
-    for(const c of cats) blend[c.categoryName]=+c.score.toFixed(4);
-    const leftEye = midpoint(l[33],l[133]), rightEye = midpoint(l[362],l[263]), nose=l[1]||l[4];
-    const eyeCenter = midpoint(leftEye,rightEye);
-    const eyeDist = dist(leftEye,rightEye);
-    const noseOffset = eyeDist ? (nose.x-eyeCenter.x)/eyeDist : 0;
-    let angle = 'frontal';
-    if(Math.abs(noseOffset)>.18) angle = noseOffset>0?'3/4 derecha':'3/4 izquierda';
-    if(Math.abs(noseOffset)>.34) angle = noseOffset>0?'perfil derecha aprox.':'perfil izquierda aprox.';
-    const smile = ((blend.mouthSmileLeft||0)+(blend.mouthSmileRight||0))/2;
-    return {box,angle,noseOffset:+noseOffset.toFixed(3),smile:+smile.toFixed(3),landmarks:l.map(p=>({x:+p.x.toFixed(5),y:+p.y.toFixed(5),z:+(p.z||0).toFixed(5)})), blendshapes:blend, matrixes:res.facialTransformationMatrixes||[]};
+    const box={x:+minX.toFixed(5),y:+minY.toFixed(5),w:+(maxX-minX).toFixed(5),h:+(maxY-minY).toFixed(5),area:+((maxX-minX)*(maxY-minY)).toFixed(5)};
+    const blend={}; for(const c of (res.faceBlendshapes?.[0]?.categories||[])) blend[c.categoryName]=+c.score.toFixed(4);
+    const L=midpoint(l[33],l[133]), R=midpoint(l[362],l[263]), nose=l[1]||l[4], eyeCenter=midpoint(L,R), eyeDist=dist(L,R)||1, noseOffset=(nose.x-eyeCenter.x)/eyeDist;
+    let angle='frontal'; if(Math.abs(noseOffset)>.16) angle=noseOffset>0?'3/4 derecha':'3/4 izquierda'; if(Math.abs(noseOffset)>.33) angle=noseOffset>0?'perfil derecha aprox.':'perfil izquierda aprox.';
+    const smile=(((blend.mouthSmileLeft||0)+(blend.mouthSmileRight||0))/2); const expr=smile>.24?'sonrisa amplia':smile>.13?'sonrisa leve':'neutra';
+    const matrixes=(res.facialTransformationMatrixes||[]).map(m=>m?.data?Array.from(m.data).map(v=>+v.toFixed(5)):m);
+    return {box,angle,noseOffset:+noseOffset.toFixed(3),smile:+smile.toFixed(3),expression:expr,landmarks:l.map(p=>({x:+p.x.toFixed(5),y:+p.y.toFixed(5),z:+(p.z||0).toFixed(5)})),blendshapes:blend,matrixes};
   }
 
-  function summarizePose(res, img){
-    if(!res?.landmarks?.length) return null;
-    const l = res.landmarks[0];
-    const visible = l.filter(p=>(p.visibility ?? 1)>.45).length;
-    const nose=l[0], leftAnkle=l[27], rightAnkle=l[28], leftShoulder=l[11], rightShoulder=l[12], leftHip=l[23], rightHip=l[24];
-    const hasFullBody = !!(nose && leftAnkle && rightAnkle && ((leftAnkle.visibility??1)>.35 || (rightAnkle.visibility??1)>.35));
-    const shoulderW = leftShoulder&&rightShoulder ? Math.abs(leftShoulder.x-rightShoulder.x) : 0;
-    const hipW = leftHip&&rightHip ? Math.abs(leftHip.x-rightHip.x) : 0;
-    return {visible, hasFullBody, shoulderW:+shoulderW.toFixed(4), hipW:+hipW.toFixed(4), landmarks:l.map(p=>({x:+p.x.toFixed(5),y:+p.y.toFixed(5),z:+(p.z||0).toFixed(5),visibility:+(p.visibility??0).toFixed(3)})), worldLandmarks:(res.worldLandmarks?.[0]||[]).map(p=>({x:+p.x.toFixed(5),y:+p.y.toFixed(5),z:+p.z.toFixed(5),visibility:+(p.visibility??0).toFixed(3)}))};
+  function summarizePose(res){
+    if(!res?.landmarks?.length) return null; const l=res.landmarks[0]; const visible=l.filter(p=>(p.visibility??1)>.45).length;
+    const has = i => l[i] && (l[i].visibility??1)>.35; const hasFullBody=has(0)&&(has(27)||has(28)); const shoulderW=(has(11)&&has(12))?Math.abs(l[11].x-l[12].x):0; const hipW=(has(23)&&has(24))?Math.abs(l[23].x-l[24].x):0;
+    let minX=1,minY=1,maxX=0,maxY=0; for(const p of l){ if((p.visibility??1)<.35) continue; minX=Math.min(minX,p.x); minY=Math.min(minY,p.y); maxX=Math.max(maxX,p.x); maxY=Math.max(maxY,p.y); }
+    const bodyBox={x:+minX.toFixed(5),y:+minY.toFixed(5),w:+(maxX-minX).toFixed(5),h:+(maxY-minY).toFixed(5)}; const sideScore=shoulderW && hipW ? Math.max(0,Math.min(1,1-(shoulderW/(hipW+0.001)-0.7))) : 0;
+    return {visible,hasFullBody,shoulderW:+shoulderW.toFixed(4),hipW:+hipW.toFixed(4),sideScore:+sideScore.toFixed(3),bodyBox,landmarks:l.map(p=>({x:+p.x.toFixed(5),y:+p.y.toFixed(5),z:+(p.z||0).toFixed(5),visibility:+(p.visibility??0).toFixed(3)})),worldLandmarks:(res.worldLandmarks?.[0]||[]).map(p=>({x:+p.x.toFixed(5),y:+p.y.toFixed(5),z:+p.z.toFixed(5),visibility:+(p.visibility??0).toFixed(3)}))};
   }
 
-  function faceMeasurements(landmarks, img){
-    const p=(i)=>landmarks[i];
-    const eyeL=midpoint(p(33),p(133)), eyeR=midpoint(p(362),p(263));
-    const base=dist(eyeL,eyeR) || 1;
-    const n=(v)=>+(v/base).toFixed(3);
-    const faceW = dist(p(234),p(454));
-    const faceH = dist(p(10),p(152));
-    return {
-      base:'interocular',
-      eye_dist:1,
-      face_w:n(faceW), face_h:n(faceH), face_wh:+(faceW/(faceH||1)).toFixed(3),
-      eye_w:n((dist(p(33),p(133))+dist(p(362),p(263)))/2),
-      nose_w:n(dist(p(48),p(278))), nose_h:n(dist(p(168),p(2))),
-      mouth_w:n(dist(p(61),p(291))), mouth_h:n(dist(p(13),p(14))),
-      jaw_w:n(dist(p(172),p(397))),
-      v_eye:+(((eyeL.y+eyeR.y)/2-p(10).y)/(faceH||1)).toFixed(3),
-      v_nose:+((p(2).y-p(10).y)/(faceH||1)).toFixed(3),
-      v_mouth:+(((p(13).y+p(14).y)/2-p(10).y)/(faceH||1)).toFixed(3)
-    };
+  function faceMeasurements(l){
+    const p=i=>l[i]; const eyeL=midpoint(p(33),p(133)), eyeR=midpoint(p(362),p(263)), base=dist(eyeL,eyeR)||1, n=v=>+(v/base).toFixed(3); const faceW=dist(p(234),p(454)), faceH=dist(p(10),p(152))||1; const mouthC=midpoint(p(13),p(14));
+    return {base:'interocular',eye_dist:1,face_w:n(faceW),face_h:n(faceH),face_wh:+(faceW/faceH).toFixed(3),eye_w:n((dist(p(33),p(133))+dist(p(362),p(263)))/2),nose_w:n(dist(p(48),p(278))),nose_h:n(dist(p(168),p(2))),mouth_w:n(dist(p(61),p(291))),mouth_h:n(dist(p(13),p(14))),jaw_w:n(dist(p(172),p(397))),brow_eye:n((dist(p(105),p(159))+dist(p(334),p(386)))/2),eye_nose:n(dist(midpoint(eyeL,eyeR),p(2))),nose_mouth:n(dist(p(2),mouthC)),mouth_chin:n(dist(mouthC,p(152))),v_eye:+(((eyeL.y+eyeR.y)/2-p(10).y)/faceH).toFixed(3),v_nose:+((p(2).y-p(10).y)/faceH).toFixed(3),v_mouth:+((mouthC.y-p(10).y)/faceH).toFixed(3),v_jaw:+((midpoint(p(172),p(397)).y-p(10).y)/faceH).toFixed(3)};
   }
+
+  function bodyMeasurements(l){ const vis=i=>l[i]&&(l[i].visibility??1)>.35; const d=(a,b)=>vis(a)&&vis(b)?dist(l[a],l[b]):null; const height=(vis(0)&&(vis(27)||vis(28)))?Math.abs(((l[27]?.y||l[28]?.y))-l[0].y):null; const norm=v=>height?+(v/height).toFixed(3):null; return {height_norm:height?1:null,shoulder_w:norm(d(11,12)),hip_w:norm(d(23,24)),torso_h:norm(d(11,23)||d(12,24)),arm_l:norm(d(11,15)),arm_r:norm(d(12,16)),leg_l:norm(d(23,27)),leg_r:norm(d(24,28))}; }
 
   function scoreImage(item){
-    let score=0; const reasons=[];
-    const mp = item.image.megapixels||0;
-    if(mp>=1.8) score+=22; else if(mp>=.8) score+=14; else {score+=6; reasons.push('baja resolución');}
-    if(item.image.sharpness>=18) score+=22; else if(item.image.sharpness>=9) score+=13; else {score+=4; reasons.push('poca nitidez');}
-    if(item.face){
-      score+=24;
-      const a=item.face.box.area;
-      if(a>.055 && a<.42) score+=18; else if(a>.025) score+=10; else {score+=4; reasons.push('cara chica/lejana');}
-      if(Math.abs(item.face.box.x+item.face.box.w/2-.5)<.22) score+=6; else reasons.push('cara descentrada');
-      if(item.face.smile>.18) score+=3;
-    }else reasons.push('sin rostro detectado');
-    if(item.pose?.hasFullBody) score+=12; else if(item.pose) score+=5;
-    score=Math.max(0,Math.min(100,Math.round(score)));
-    return {score,label: score>=72?'buena':score>=48?'usable':'débil',reasons};
+    let score=0; const reasons=[]; const im=item.image, mp=im.megapixels||0;
+    if(mp>=2.2) score+=18; else if(mp>=1.1) score+=13; else {score+=6; reasons.push('baja resolución');}
+    if(im.sharpness>=22) score+=20; else if(im.sharpness>=11) score+=13; else {score+=4; reasons.push('poca nitidez');}
+    if(im.brightness>=.22&&im.brightness<=.82) score+=10; else {score+=4; reasons.push('exposición floja');}
+    if(im.contrast>=.18) score+=8; else {score+=3; reasons.push('poco contraste');}
+    if(item.face){ score+=20; const a=item.face.box.area; if(a>.06&&a<.44) score+=15; else if(a>.025) score+=9; else {score+=3; reasons.push('cara chica/lejana');} if(Math.abs(item.face.box.x+item.face.box.w/2-.5)<.22) score+=5; else reasons.push('cara descentrada'); } else reasons.push('sin rostro detectado');
+    if(item.pose?.hasFullBody) score+=8; else if(item.pose) score+=3; score=Math.max(0,Math.min(100,Math.round(score))); return {score,label:score>=78?'excelente':score>=66?'buena':score>=48?'usable':'débil',reasons};
   }
 
-  function inferTags(item){
-    const tags=[];
-    if(item.face){tags.push(item.face.angle); if(item.face.smile>.20) tags.push('sonrisa'); else tags.push('neutra');}
-    if(item.pose?.hasFullBody) tags.push('cuerpo completo');
-    if(item.image.megapixels<.8) tags.push('baja resolución');
-    if(item.quality.label==='buena') tags.push('buena referencia');
-    return tags;
-  }
+  function inferTags(item){ const tags=[]; if(item.face){tags.push(item.face.angle,item.face.expression); if(item.face.box.area>.10) tags.push('cara grande');} if(item.pose?.hasFullBody) tags.push('cuerpo completo'); if(item.image.sharpness>=22) tags.push('nítida'); if(item.image.megapixels<1) tags.push('baja resolución'); if(item.quality.score>=78) tags.push('top'); return tags; }
+
+  function makeFingerprint(item){ return {kind:'landmark_fingerprint_not_biometric_embedding',note:'Promedio técnico para ordenar el dossier; no reemplaza ArcFace/InsightFace.',face:item.measurements?Object.fromEntries(Object.entries(item.measurements).filter(([,v])=>typeof v==='number')):null,body:item.bodyMeasurements||null,hash:item.image?.dhash||null}; }
 
   function autoAssignRoles(update=true){
-    if(!state.items.length) return;
-    for(const item of state.items){ if(!item.manual) item.role=''; }
-    const available = (roleKey)=>state.items.filter(i=>!i.manual && !i.role && fitsRole(i,roleKey)).sort((a,b)=>b.quality.score-a.quality.score);
-    const assign=(key)=>{const found=available(key)[0]; if(found) found.role=key;};
-    ROLE_DEFS.forEach(r=>assign(r.key));
-    const naturals=state.items.filter(i=>!i.role && i.quality.score>=70).sort((a,b)=>b.quality.score-a.quality.score).slice(0,4);
-    naturals.forEach((i,n)=>i.role='natural_reference_'+String(n+1).padStart(2,'0'));
-    if(update){renderAll();setPrompt();}
+    if(!state.items.length) return; for(const item of state.items){ if(!item.manual) item.role=''; }
+    const sorted = key => state.items.filter(i=>!i.manual&&!i.role&&fitsRole(i,key)).sort((a,b)=>roleScore(b,key)-roleScore(a,key));
+    ['face_front_neutral','face_front_smile','face_front_serious','face_3_4_left','face_3_4_right','profile_left','profile_right','eyes_detail','mouth_detail','hair_reference','ear_left','ear_right','body_front','body_side','body_back','body_casual'].forEach(key=>{const found=sorted(key)[0]; if(found) found.role=key;});
+    const naturals=state.items.filter(i=>!i.role&&i.quality.score>=66&&(i.face||i.pose)).sort((a,b)=>b.quality.score-a.quality.score).slice(0,NATURAL_COUNT); naturals.forEach((i,n)=>i.role='natural_reference_'+String(n+1).padStart(2,'0'));
+    if(update){ renderAll(); setPrompt(); showToast('referencias autoasignadas'); }
   }
 
   function fitsRole(i,key){
-    if(key.startsWith('body')) return !!i.pose?.hasFullBody && i.quality.score>=40;
-    if(key==='hair_reference') return !!i.face && i.face.box.area>.08 && i.quality.score>=45;
+    if(key==='body_front') return !!i.pose?.hasFullBody && i.quality.score>=42;
+    if(key==='body_side') return !!i.pose?.hasFullBody && i.quality.score>=42;
+    if(key==='body_back') return !!i.pose?.hasFullBody && !i.face;
+    if(key==='body_casual') return !!i.pose && i.quality.score>=48;
+    if(key==='hair_reference') return !!i.face && i.face.box.area>.08 && i.quality.score>=48;
     if(!i.face) return false;
-    if(key==='face_front_neutral') return i.face.angle==='frontal' && i.face.smile<.18;
-    if(key==='face_front_smile') return i.face.angle==='frontal' && i.face.smile>=.14;
+    if(key==='face_front_neutral') return i.face.angle==='frontal' && i.face.smile<.16;
+    if(key==='face_front_smile') return i.face.angle==='frontal' && i.face.smile>=.12;
+    if(key==='face_front_serious') return i.face.angle==='frontal' && i.face.smile<.08;
+    if(key==='eyes_detail') return i.face.box.area>.11 && i.quality.score>=55;
+    if(key==='mouth_detail') return i.face.box.area>.10 && i.face.smile>=.08;
+    if(key==='ear_left') return i.face.angle.includes('izquierda');
+    if(key==='ear_right') return i.face.angle.includes('derecha');
     if(key==='face_3_4_left') return i.face.angle.includes('izquierda') && !i.face.angle.includes('perfil');
     if(key==='face_3_4_right') return i.face.angle.includes('derecha') && !i.face.angle.includes('perfil');
     if(key==='profile_left') return i.face.angle.includes('perfil izquierda');
     if(key==='profile_right') return i.face.angle.includes('perfil derecha');
     return false;
   }
+  function roleScore(i,key){ let s=i.quality.score; if(key==='face_front_neutral') s+=i.face?Math.max(0,20-Math.abs(i.face.noseOffset)*90)+(i.face.smile<.08?8:0):0; if(key==='face_front_smile') s+=i.face?i.face.smile*45:0; if(key==='hair_reference') s+=i.face?i.face.box.area*120:0; if(key==='body_front') s+=i.pose?(i.pose.shoulderW*60 + (i.pose.sideScore<.55?12:0)):0; if(key==='body_side') s+=i.pose?(i.pose.sideScore*28):0; if(key==='eyes_detail') s+=i.face?(i.face.box.area*90 + (i.quality.score>=78?8:0)):0; if(key==='mouth_detail') s+=i.face?(i.face.smile*50 + i.face.box.area*60):0; if(key==='face_front_serious') s+=i.face?Math.max(0,18-Math.abs(i.face.noseOffset)*90)+(i.face.smile<.05?10:0):0; if(key==='body_casual') s+=i.pose?(i.pose.visible + i.quality.score/3):0; return s; }
 
-  function renderAll(drawPreview=true){
-    renderStats(); renderRoles(); renderGallery(); renderRefs(); updateReport();
-    if(drawPreview && state.selected) showPreview(state.selected);
-  }
-
-  function renderStats(){
-    const good=state.items.filter(i=>i.quality.score>=72).length;
-    const refs=ROLE_DEFS.filter(r=>state.items.some(i=>i.role===r.key)).length;
-    els.mPhotos.textContent=state.items.length; els.mGood.textContent=good; els.mGood.className='v '+(good>=10?'good':good>=4?'warn':'bad'); els.mRefs.textContent=refs+'/'+ROLE_DEFS.length; els.mRefs.className='v '+(refs>=7?'good':refs>=4?'warn':'bad');
-    els.galleryCount.textContent=state.items.length+' imágenes';
-  }
-
-  function renderRoles(){
-    els.roles.innerHTML = ROLE_DEFS.map(r=>{
-      const item=state.items.find(i=>i.role===r.key);
-      return `<div class="roleline"><div><strong>${r.label}</strong><small>${item?item.name:r.must}</small></div><span class="pill ${item?'':'empty'}">${item?'OK':'FALTA'}</span></div>`;
-    }).join('');
-  }
+  function renderAll(drawPreview=true){ renderStats(); renderRoles(); renderGallery(); renderRefs(); renderReadiness(); updateReport(); if(drawPreview && state.selected) showPreview(state.selected); if(!state.selected){ els.canvas.classList.add('hidden'); els.empty.classList.remove('hidden'); els.selectedName.textContent='ninguna foto'; } }
+  function renderStats(){ const good=state.items.filter(i=>i.quality.score>=66).length, refs=ROLE_DEFS.filter(r=>state.items.some(i=>i.role===r.key)).length, ready=readiness().score; els.mPhotos.textContent=state.items.length; els.mGood.textContent=good; els.mGood.className='v '+(good>=12?'good':good>=5?'warn':'bad'); els.mRefs.textContent=refs+'/'+ROLE_DEFS.length; els.mRefs.className='v '+(refs>=8?'good':refs>=5?'warn':'bad'); els.mReady.textContent=ready+'%'; els.mReady.className='v '+(ready>=82?'good':ready>=55?'warn':'bad'); els.galleryCount.textContent=state.items.length+' imágenes'; }
+  function renderRoles(){ els.roles.innerHTML=ROLE_DEFS.map(r=>{const item=state.items.find(i=>i.role===r.key); return `<div class="roleline"><div><strong>${r.required?'<span class="reqTag">REQ</span>':''}${r.label}</strong><small>${item?escapeHtml(item.name):r.must}</small></div><span class="pill ${item?'':(r.required?'bad':'empty')}">${item?'OK':(r.required?'FALTA':'OPC')}</span></div>`;}).join(''); }
 
   function renderGallery(){
-    const q=(els.filter.value||'').toLowerCase();
-    const list=state.items.filter(i=>(i.name+' '+i.role+' '+i.tags.join(' ')).toLowerCase().includes(q));
-    els.gallery.innerHTML = list.map(item=>photoCard(item)).join('');
-    els.gallery.querySelectorAll('[data-id]').forEach(card=>{
-      const id=card.dataset.id, item=state.items.find(x=>x.id===id);
-      card.querySelector('img').onclick=()=>{state.selected=item;showPreview(item)};
-      card.querySelector('[data-view]').onclick=()=>{state.selected=item;showPreview(item)};
-      card.querySelector('select').onchange=(e)=>{item.role=e.target.value;item.manual=!!item.role;renderAll(false);setPrompt();};
-      card.querySelector('[data-remove]').onclick=()=>{URL.revokeObjectURL(item.url);state.items=state.items.filter(x=>x.id!==id);if(state.selected?.id===id) state.selected=null;renderAll();setPrompt();};
-    });
+    const q=(els.filter.value||'').toLowerCase(); const list=state.items.filter(i=>(i.name+' '+i.role+' '+i.tags.join(' ')+' '+(i.quality.reasons||[]).join(' ')).toLowerCase().includes(q));
+    els.gallery.innerHTML=list.map(item=>photoCard(item)).join('');
+    els.gallery.querySelectorAll('[data-id]').forEach(card=>{ const id=card.dataset.id, item=state.items.find(x=>x.id===id); card.querySelector('.thumb').onclick=()=>{state.selected=item; showPreview(item); renderGallery();}; card.querySelector('[data-view]').onclick=()=>{state.selected=item; showPreview(item); renderGallery();}; card.querySelector('select').onchange=e=>{ item.role=e.target.value; item.manual=!!item.role; renderAll(false); setPrompt();}; card.querySelector('[data-remove]').onclick=()=>{URL.revokeObjectURL(item.url); state.items=state.items.filter(x=>x.id!==id); if(state.selected?.id===id) state.selected=null; renderAll(); setPrompt();}; });
+  }
+  function photoCard(item){ const cls=item.quality.score>=78?'good':item.quality.score>=55?'warn':'bad'; const options=['',...ROLE_KEYS].map(k=>`<option value="${k}" ${item.role===k?'selected':''}>${k?roleLabel(k):'sin rol'}</option>`).join(''); return `<article class="photo ${state.selected?.id===item.id?'selected':''}" data-id="${item.id}"><div class="thumb"><img src="${item.url}" alt=""><span class="badge ${cls}">${item.quality.score}</span><span class="angle">${item.face?.angle || (item.pose ? 'pose' : 'sin rostro')}</span>${item.role?`<span class="roleBadge">${roleLabel(item.role)}</span>`:''}</div><div class="photoBody"><div class="name">${escapeHtml(item.name)}</div><div class="facts"><div class="fact"><kbd>res</kbd><span>${item.image.megapixels||0} MP</span></div><div class="fact"><kbd>sharp</kbd><span>${Math.round(item.image.sharpness||0)}</span></div><div class="fact"><kbd>face</kbd><span>${item.face?Math.round(item.face.box.area*1000)/10+'%':'—'}</span></div><div class="fact"><kbd>body</kbd><span>${item.pose?.hasFullBody?'full':item.pose?'part':'—'}</span></div></div><select>${options}</select><div class="tagline">${item.tags.slice(0,5).map(t=>`<span class="tag">${escapeHtml(t)}</span>`).join('')}</div><div class="row"><button class="linkbtn" data-view type="button">ver</button><button class="linkbtn danger" data-remove type="button">borrar</button></div></div></article>`; }
+
+  function roleLabel(k){ const r=ROLE_DEFS.find(r=>r.key===k); if(r) return r.label; if(k.startsWith('natural_reference_')) return 'Natural '+k.slice(-2); return k.replaceAll('_',' '); }
+  function showPreview(item){ state.selected=item; els.selectedName.textContent=item.name; els.empty.classList.add('hidden'); els.canvas.classList.remove('hidden'); const img=new Image(); img.onload=()=>{ const scale=Math.min(1160/img.naturalWidth,860/img.naturalHeight,1); els.canvas.width=Math.round(img.naturalWidth*scale); els.canvas.height=Math.round(img.naturalHeight*scale); ctx.clearRect(0,0,els.canvas.width,els.canvas.height); ctx.drawImage(img,0,0,els.canvas.width,els.canvas.height); drawFace(item); drawPose(item); }; img.src=item.url; }
+  function drawFace(item){ if(!item.face) return; const W=els.canvas.width,H=els.canvas.height; ctx.fillStyle='rgba(76,201,255,.78)'; const step=Math.max(1,Math.floor(item.face.landmarks.length/120)); item.face.landmarks.forEach((p,idx)=>{if(idx%step)return; ctx.beginPath(); ctx.arc(p.x*W,p.y*H,1.65,0,Math.PI*2); ctx.fill();}); ctx.strokeStyle='rgba(56,230,181,.95)'; ctx.lineWidth=2; const b=item.face.box; ctx.strokeRect(b.x*W,b.y*H,b.w*W,b.h*H); ctx.strokeStyle='rgba(76,201,255,.95)'; FACE_EDGES.forEach(([a,b])=>{const A=item.face.landmarks[a],B=item.face.landmarks[b]; if(!A||!B)return; ctx.beginPath(); ctx.moveTo(A.x*W,A.y*H); ctx.lineTo(B.x*W,B.y*H); ctx.stroke();}); }
+  function drawPose(item){ if(!item.pose) return; const W=els.canvas.width,H=els.canvas.height,l=item.pose.landmarks; ctx.strokeStyle='rgba(255,196,95,.95)'; ctx.lineWidth=2; ctx.fillStyle='rgba(255,196,95,.95)'; POSE_EDGES.forEach(([a,b])=>{const A=l[a],B=l[b]; if(!A||!B||(A.visibility??1)<.35||(B.visibility??1)<.35)return; ctx.beginPath(); ctx.moveTo(A.x*W,A.y*H); ctx.lineTo(B.x*W,B.y*H); ctx.stroke();}); l.forEach(p=>{if((p.visibility??1)<.35)return; ctx.beginPath(); ctx.arc(p.x*W,p.y*H,2.7,0,Math.PI*2); ctx.fill();}); if(item.pose.bodyBox){const b=item.pose.bodyBox; ctx.strokeStyle='rgba(154,140,255,.92)'; ctx.strokeRect(b.x*W,b.y*H,b.w*W,b.h*H);} }
+
+  function renderRefs(){ const assigned=state.items.filter(i=>i.role).sort((a,b)=>a.role.localeCompare(b.role)); els.refs.innerHTML=assigned.length?assigned.map(i=>`<div class="mini"><img src="${i.url}"><div><strong>${roleLabel(i.role)}</strong><small>${escapeHtml(i.name)} · score ${i.quality.score} · ${i.tags.slice(0,3).join(', ')}</small></div></div>`).join(''):'<p class="note">Todavía no hay referencias asignadas.</p>'; }
+  function renderReadiness(){ const r=readiness(); els.readinessBar.style.width=r.score+'%'; els.readinessLabel.textContent=r.score+'%'; els.readinessBox.className=r.score>=82?'okbox':r.score>=55?'warnbox':'badbox'; els.readinessBox.innerHTML=`<b>${r.label}</b><br>${r.summary}`; els.validationList.innerHTML=r.checks.map(c=>`<div class="check ${c.state}"><span class="ico">${c.state==='ok'?'✓':c.state==='warn'?'!':'×'}</span><div><b>${escapeHtml(c.title)}</b><br>${escapeHtml(c.text)}</div></div>`).join(''); }
+  function vectorStats(items, keys){
+    const vectors=items.map(i=>keys.map(k=>i.measurements?.[k]).filter(v=>typeof v==='number'));
+    const valid=items.filter((i,idx)=>vectors[idx].length===keys.length);
+    if(!valid.length) return {samples:0, average:null, spread:null, outliers:[]};
+    const avg={}; keys.forEach(k=>{ const vals=valid.map(i=>i.measurements[k]); avg[k]=vals.reduce((a,b)=>a+b,0)/vals.length; });
+    const distances=valid.map(i=>{ const d=Math.sqrt(keys.reduce((s,k)=>s+Math.pow((i.measurements[k]-avg[k])/(Math.abs(avg[k])||1),2),0)/keys.length); return {file:i.name, role:i.role||null, distance:+d.toFixed(4), score:i.quality.score}; }).sort((a,b)=>b.distance-a.distance);
+    const mean=distances.reduce((a,b)=>a+b.distance,0)/distances.length;
+    const spread=+(mean*100).toFixed(2);
+    return {samples:valid.length, average:Object.fromEntries(Object.entries(avg).map(([k,v])=>[k,+v.toFixed(4)])), spread_percent:spread, consistency_score:Math.max(0,Math.min(100,Math.round(100-spread*12))), outliers:distances.filter(d=>d.distance>mean*1.85).slice(0,8)};
+  }
+  function duplicateGroups(){
+    const groups=[]; const used=new Set();
+    for(let a=0;a<state.items.length;a++){ if(used.has(a)) continue; const ga=[state.items[a]]; for(let b=a+1;b<state.items.length;b++){ if(used.has(b)) continue; const da=state.items[a].image?.dhash, db=state.items[b].image?.dhash; if(da&&db&&hammingHex(da,db)<=8){ ga.push(state.items[b]); used.add(b); } } if(ga.length>1){ used.add(a); groups.push(ga.map(i=>({file:i.name, role:i.role||null, score:i.quality.score}))); } }
+    return groups;
+  }
+  function hammingHex(a,b){ let n=0; for(let i=0;i<Math.min(a.length,b.length);i++){ let x=parseInt(a[i],16)^parseInt(b[i],16); while(x){n+=x&1;x>>=1;} } return n + Math.abs(a.length-b.length)*4; }
+  function roleCoverage(){
+    const have=k=>state.items.some(i=>i.role===k);
+    return {front:have('face_front_neutral'), smile:have('face_front_smile'), left34:have('face_3_4_left'), right34:have('face_3_4_right'), profileL:have('profile_left'), profileR:have('profile_right'), hair:have('hair_reference'), bodyF:have('body_front'), bodyS:have('body_side'), bodyB:have('body_back'), naturals:state.items.filter(i=>i.role&&i.role.startsWith('natural_reference_')).length};
   }
 
-  function photoCard(item){
-    const cls=item.quality.score>=72?'good':item.quality.score>=48?'warn':'bad';
-    const options=['','natural_reference_01','natural_reference_02','natural_reference_03','natural_reference_04',...ROLE_DEFS.map(r=>r.key)]
-      .map(k=>`<option value="${k}" ${item.role===k?'selected':''}>${k?roleLabel(k):'sin rol'}</option>`).join('');
-    return `<article class="photo" data-id="${item.id}">
-      <div class="thumb"><img src="${item.url}" alt=""><span class="badge ${cls}">${item.quality.score}</span><span class="angle">${item.face?.angle||item.pose?'pose':'sin rostro'}</span></div>
-      <div class="photoBody"><div class="name">${escapeHtml(item.name)}</div>
-        <div class="facts">
-          <div class="fact"><kbd>res</kbd><span>${item.image.megapixels||0} MP</span></div>
-          <div class="fact"><kbd>sharp</kbd><span>${Math.round(item.image.sharpness||0)}</span></div>
-          <div class="fact"><kbd>face</kbd><span>${item.face?Math.round(item.face.box.area*1000)/10+'%':'—'}</span></div>
-          <div class="fact"><kbd>body</kbd><span>${item.pose?.hasFullBody?'full':item.pose?'part':'—'}</span></div>
-        </div>
-        <select>${options}</select>
-        <div class="row"><button class="linkbtn" data-view type="button">ver landmarks</button><button class="linkbtn danger" data-remove type="button">borrar</button></div>
-      </div></article>`;
+  function readiness(){
+    const checks=[]; const hasRole=k=>state.items.some(i=>i.role===k); const count=state.items.length, good=state.items.filter(i=>i.quality.score>=66).length; const excellent=state.items.filter(i=>i.quality.score>=78).length; const required=ROLE_DEFS.filter(r=>r.required), missing=required.filter(r=>!hasRole(r.key)); const cov=roleCoverage(); const faceAngles=['face_front_neutral','face_3_4_left','face_3_4_right','profile_left','profile_right'].filter(hasRole).length; const naturals=cov.naturals; const attrs=getAttrs(); const keys=['face_w','face_h','face_wh','eye_w','nose_w','nose_h','mouth_w','jaw_w','v_eye','v_nose','v_mouth']; const consistency=vectorStats(state.items.filter(i=>i.measurements&&i.quality.score>=55),keys); const dupes=duplicateGroups();
+    let score=0; score+=Math.min(18, count>=70?18:count>=45?16:count>=30?13:count>=20?9:count>=10?5:0); score+=Math.min(18, good>=24?18:good>=16?14:good>=10?10:good>=5?5:0); score+=Math.round((required.length-missing.length)/required.length*28); score+=faceAngles>=5?14:faceAngles*2.8; score+=Math.min(8,naturals>=8?8:naturals); score+=(attrs.eyes&&attrs.skin&&attrs.hairColor&&attrs.hairStyle&&attrs.build&&attrs.marks)?8:(attrs.eyes||attrs.skin||attrs.hairColor||attrs.hairStyle||attrs.build?4:0); score+=consistency.samples>=6?Math.round(Math.min(6,consistency.consistency_score/18)):0; score-=Math.min(5,dupes.length);
+    score=Math.max(0,Math.min(100,Math.round(score)));
+    checks.push({state:count>=45?'ok':count>=20?'warn':'bad',title:'Cantidad de fotos',text:count>=45?`${count} fotos: base fuerte para modo clon.`:`Tenés ${count}. Para máximo parecido: 40–100 fotos variadas.`});
+    checks.push({state:good>=16?'ok':good>=8?'warn':'bad',title:'Fotos útiles',text:`${good} buenas y ${excellent} excelentes. Cuantas más excelentes, menos “cara genérica”.`});
+    checks.push({state:missing.length===0?'ok':missing.length<=2?'warn':'bad',title:'Roles obligatorios',text:missing.length?`Faltan: ${missing.map(r=>r.label).join(', ')}.`:'Todos los roles obligatorios están cubiertos.'});
+    checks.push({state:faceAngles>=5?'ok':faceAngles>=3?'warn':'bad',title:'Volumen facial completo',text:`Frontal + 3/4 + perfiles cubiertos: ${faceAngles}/5.`});
+    checks.push({state:naturals>=8?'ok':naturals>=3?'warn':'bad',title:'Fotos naturales',text:`Referencias naturales asignadas: ${naturals}. Son claves para que no parezca un render.`});
+    checks.push({state:consistency.samples>=6?(consistency.consistency_score>=70?'ok':'warn'):'warn',title:'Consistencia de identidad',text:consistency.samples?`${consistency.samples} muestras faciales · score ${consistency.consistency_score}/100 · dispersión ${consistency.spread_percent}%.`:'Faltan muestras faciales medibles para comparar consistencia.'});
+    checks.push({state:dupes.length?'warn':'ok',title:'Duplicados / fotos muy parecidas',text:dupes.length?`${dupes.length} grupo(s) de fotos casi duplicadas. Conviene variedad real, no 20 fotos iguales.`:'No se detectaron duplicados fuertes por hash visual.'});
+    checks.push({state:(attrs.eyes&&attrs.hairColor&&attrs.build&&attrs.marks)?'ok':'warn',title:'Datos manuales',text:'Completá ojos, piel/pelo, complexión y rasgos distintivos para reforzar el prompt.'});
+    const label=score>=90?'Dossier casi máximo':score>=78?'Dossier muy fuerte':score>=62?'Dossier bueno, mejorable':score>=42?'Dossier incompleto':'Dossier débil';
+    const summary=score>=90?'Es lo más cercano a una base de clon visual sin entrenar un modelo propio.':'Podés exportar, pero para acercarte al “clon” conviene cubrir faltantes y sumar fotos naturales nítidas.';
+    return {score,label,summary,checks,missing:missing.map(r=>r.key),consistency,duplicates:dupes,coverage:cov};
   }
 
-  function roleLabel(k){ return ROLE_DEFS.find(r=>r.key===k)?.label || k.replaceAll('_',' '); }
 
-  function showPreview(item){
-    els.selectedName.textContent=item.name;
-    els.empty.classList.add('hidden'); els.canvas.classList.remove('hidden');
-    const img=new Image(); img.onload=()=>{
-      const maxW=1100, maxH=820, scale=Math.min(maxW/img.naturalWidth,maxH/img.naturalHeight,1);
-      els.canvas.width=Math.round(img.naturalWidth*scale); els.canvas.height=Math.round(img.naturalHeight*scale);
-      ctx.clearRect(0,0,els.canvas.width,els.canvas.height); ctx.drawImage(img,0,0,els.canvas.width,els.canvas.height);
-      drawFace(item,scale); drawPose(item,scale);
-    }; img.src=item.url;
+  function setPrompt(){ els.prompt.value=buildPrompt(); }
+  function buildPrompt(){ const attrs=getAttrs(), assigned=state.items.filter(i=>i.role).sort((a,b)=>a.role.localeCompare(b.role)), front=state.items.find(i=>i.role==='face_front_neutral')||assigned.find(i=>i.face), meas=front?.measurements, ready=readiness(); const refs=assigned.map(i=>`- ${roleLabel(i.role)}: /refs/${safeName(i.role)}.jpg · calidad ${i.quality.score}/100 · ${i.tags.join(', ')||'sin tags'}`).join('\n')||'- No hay referencias asignadas todavía.'; const measuresTxt=meas?Object.entries(meas).map(([k,v])=>`- ${k}: ${typeof v==='number'?v:v}`).join('\n'):'- Sin mediciones faciales válidas.'; return `CLONE DOSSIER MAX · PROMPT PARA MÁXIMA FIDELIDAD\n\nDossier: ${attrs.alias||'sin nombre'}\nEstado del dossier: ${ready.score}% · ${ready.label} · consistencia facial ${ready.consistency?.consistency_score ?? "—"}/100\n\nOBJETIVO\nRecrear a la MISMA persona de las imágenes adjuntas con la máxima fidelidad posible. La meta es aproximarse a un clon visual: mismo rostro, mismo cuerpo, misma presencia. Evitar por completo que parezca otra persona, un familiar, una versión embellecida o un “primo lejano”. La prioridad absoluta son las referencias visuales del ZIP, no la descripción textual.\n\nCÓMO USAR LAS REFERENCIAS\n1. Usar /refs/face_front_neutral.jpg como ancla principal de identidad facial si existe.\n2. Usar las referencias 3/4 y perfil para volumen real de nariz, mandíbula, frente, ojos, pómulos y mentón.\n3. Usar las fotos naturales para presencia, expresión, textura y gestos no rígidos.\n4. Usar body_front/body_side para complexión, proporciones, postura y volumen corporal.\n5. Usar hair_reference para corte, entradas, volumen, color y línea frontal del pelo.
+6. Usar eyes_detail/mouth_detail si existen para párpados, mirada, cejas, dientes, labios y sonrisa real.
+7. Usar perfiles y orejas para evitar inventar nariz, mentón, frente y laterales.\n\nREFERENCIAS INCLUIDAS\n${refs}\n\nDATOS MANUALES\n- Edad aproximada: ${attrs.age||'no indicado'}\n- Ojos: ${attrs.eyes||'no indicado'}\n- Piel: ${attrs.skin||'no indicado'}\n- Altura: ${attrs.height||'no indicado'}\n- Pelo color: ${attrs.hairColor||'no indicado'}\n- Pelo estilo actual: ${attrs.hairStyle||'no indicado'}\n- Vello facial: ${attrs.beard||'no indicado'}\n- Complexión: ${attrs.build||'no indicado'}\n- Rasgos distintivos estables: ${attrs.marks||'no indicado'}\n\nANCLAS GEOMÉTRICAS FACIALES\n${measuresTxt}\n\nNO COPIAR / EXCLUIR\n${attrs.exclude||'No copiar ropa puntual, fondo, accesorios accidentales, sombras raras, deformaciones de una foto específica ni peinados viejos.'}\n\nDIRECTRICES DE IDENTIDAD\n- Mantener proporciones de ojos, cejas, nariz, boca, frente, pómulos, mandíbula, mentón y orejas si aparecen.\n- Mantener complexión y proporción corporal sin adelgazar, ensanchar o muscularizar artificialmente.\n- No inventar rasgos nuevos. No embellecer, estilizar, rejuvenecer ni “mejorar” hasta perder identidad.\n- No mezclar con otra cara. No generar una versión genérica.\n- Si dos fotos contradicen un detalle, priorizar las de mayor calidad y las asignadas como roles principales.\n- Las medidas y landmarks del JSON sirven como apoyo; la identidad debe venir de las fotos adjuntas.\n\nRESULTADO ESPERADO\nImagen fotorrealista de la misma persona, con identidad facial y corporal consistente. Prioridad: parecido antes que belleza, estética o moda. Cambiar ropa/fondo/escena solo si se pide explícitamente.`; }
+
+  function getAttrs(){ return {alias:$('alias').value.trim(),age:$('age').value.trim(),eyes:$('eyes').value.trim(),skin:$('skin').value.trim(),height:$('height').value.trim(),hairColor:$('hairColor').value.trim(),hairStyle:$('hairStyle').value.trim(),beard:$('beard').value.trim(),build:$('build').value.trim(),marks:$('marks').value.trim(),exclude:$('exclude').value.trim()}; }
+  function saveManualFields(){ localStorage.setItem('identity_dossier_manual_fields', JSON.stringify(getAttrs())); }
+  function restoreManualFields(){ try{ const data=JSON.parse(localStorage.getItem('identity_dossier_manual_fields')||'{}'); Object.entries(data).forEach(([k,v])=>{const el=$(k); if(el) el.value=v||'';}); }catch(e){} }
+
+  function updateReport(){ els.report.value=JSON.stringify(buildReport(),null,2); }
+  function buildReport(){ const ready=readiness(); return {format:'CLONE_DOSSIER_MAX',version:'3.0-max',created:new Date().toISOString(),readiness:ready,totals:{photos:state.items.length,good:state.items.filter(i=>i.quality.score>=66).length,assigned:state.items.filter(i=>i.role).length},attributes:getAttrs(),references:Object.fromEntries(state.items.filter(i=>i.role).map(i=>[i.role,{file:i.name,score:i.quality.score,tags:i.tags,quality:i.quality}])),identity_profile:buildIdentityProfile(),photos:state.items.map(i=>({id:i.id,file:i.name,role:i.role||null,manual:i.manual,quality:i.quality,image:i.image,face:i.face?{angle:i.face.angle,smile:i.face.smile,expression:i.face.expression,noseOffset:i.face.noseOffset,box:i.face.box}:null,pose:i.pose?{visible:i.pose.visible,hasFullBody:i.pose.hasFullBody,shoulderW:i.pose.shoulderW,hipW:i.pose.hipW,sideScore:i.pose.sideScore,bodyBox:i.pose.bodyBox}:null,measurements:i.measurements,bodyMeasurements:i.bodyMeasurements,fingerprint:i.fingerprint}))}; }
+  function buildIdentityProfile(){
+    const faceItems=state.items.filter(i=>i.measurements&&i.quality.score>=48); const keys=['face_w','face_h','face_wh','eye_w','nose_w','nose_h','mouth_w','mouth_h','jaw_w','v_eye','v_nose','v_mouth']; const consistency=vectorStats(faceItems,keys);
+    const bestFaces=state.items.filter(i=>i.face).sort((a,b)=>b.quality.score-a.quality.score).slice(0,12).map(i=>({file:i.name, role:i.role||null, score:i.quality.score, angle:i.face.angle, smile:i.face.smile, faceArea:i.face.box.area}));
+    const bestBodies=state.items.filter(i=>i.pose?.hasFullBody).sort((a,b)=>b.quality.score-a.quality.score).slice(0,8).map(i=>({file:i.name, role:i.role||null, score:i.quality.score, bodyBox:i.pose.bodyBox, body:i.bodyMeasurements}));
+    return {note:'Perfil promedio derivado de landmarks y controles de consistencia. No es embedding biométrico ArcFace/InsightFace ni un entrenamiento LoRA.', face_samples:faceItems.length, consistency, duplicates:duplicateGroups(), best_faces:bestFaces, best_bodies:bestBodies, best_face:bestFaces[0]?.file||null, best_body:bestBodies[0]?.file||null};
   }
 
-  function drawFace(item,scale){
-    if(!item.face) return;
-    const W=els.canvas.width,H=els.canvas.height;
-    ctx.fillStyle='rgba(68,214,255,.75)';
-    const step = Math.max(1, Math.floor(item.face.landmarks.length/100));
-    item.face.landmarks.forEach((p,idx)=>{if(idx%step) return;ctx.beginPath();ctx.arc(p.x*W,p.y*H,1.7,0,Math.PI*2);ctx.fill();});
-    const b=item.face.box; ctx.strokeStyle='rgba(56,230,181,.95)';ctx.lineWidth=2;ctx.strokeRect(b.x*W,b.y*H,b.w*W,b.h*H);
-  }
 
-  function drawPose(item,scale){
-    if(!item.pose) return;
-    const W=els.canvas.width,H=els.canvas.height;
-    const edges=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];
-    ctx.strokeStyle='rgba(255,191,91,.95)';ctx.lineWidth=2;ctx.fillStyle='rgba(255,191,91,.95)';
-    const l=item.pose.landmarks;
-    edges.forEach(([a,b])=>{const A=l[a],B=l[b]; if(!A||!B||(A.visibility??1)<.35||(B.visibility??1)<.35)return; ctx.beginPath();ctx.moveTo(A.x*W,A.y*H);ctx.lineTo(B.x*W,B.y*H);ctx.stroke();});
-    l.forEach(p=>{if((p.visibility??1)<.35)return;ctx.beginPath();ctx.arc(p.x*W,p.y*H,2.6,0,Math.PI*2);ctx.fill();});
-  }
+  function captureProtocolText(){ return `CLONE DOSSIER MAX · PROTOCOLO DE CAPTURA
 
-  function renderRefs(){
-    const assigned=state.items.filter(i=>i.role).sort((a,b)=>a.role.localeCompare(b.role));
-    els.refs.innerHTML = assigned.length ? assigned.map(i=>`<div class="mini"><img src="${i.url}"><div><strong>${roleLabel(i.role)}</strong><small>${escapeHtml(i.name)} · score ${i.quality.score}</small></div></div>`).join('') : '<p class="smallnote">Todavía no hay referencias asignadas.</p>';
-  }
+Meta: máximo parecido posible sin entrenar un LoRA/modelo propio.
 
-  function setPrompt(){
-    els.prompt.value = buildPrompt();
-  }
+Cargá idealmente 40–100 fotos:
+- 6–10 rostro frontal neutro, sin gesto, luz suave, lente normal, distancia media.
+- 4 rostro frontal sonriendo, con y sin dientes si aplica.
+- 6 rostro 3/4 izquierda/derecha, distintas luces suaves.
+- 4 perfiles reales, nariz/frente/mentón/orejas visibles.
+- 4 detalles: ojos/cejas, boca/sonrisa, pelo/entradas.
+- 6 cuerpo completo: frontal, lateral, espalda, postura casual.
+- 15–30 fotos naturales de distintos días para presencia real.
 
-  function buildPrompt(){
-    const attrs = getAttrs();
-    const assigned = state.items.filter(i=>i.role).sort((a,b)=>a.role.localeCompare(b.role));
-    const front = state.items.find(i=>i.role==='face_front_neutral') || assigned.find(i=>i.face);
-    const meas = front?.measurements;
-    const refs = assigned.map(i=>`- ${roleLabel(i.role)}: archivo ${safeName(i.role || i.name)}.jpg, calidad ${i.quality.score}/100, ${i.tags.join(', ') || 'sin tags'}`).join('\n') || '- Todavía no hay referencias asignadas.';
-    const measuresTxt = meas ? Object.entries(meas).map(([k,v])=>`- ${k}: ${typeof v==='number'?v:v}`).join('\n') : '- Sin mediciones faciales aún.';
-    return `PAQUETE DE IDENTIDAD VISUAL PARA IA GENERATIVA\n\nObjetivo: recrear a la misma persona con la máxima consistencia posible usando las imágenes adjuntas como referencia principal. No uses las medidas como reemplazo de las fotos: las medidas solo son anclas geométricas.\n\nPRIORIDAD DE REFERENCIAS\n1) Rostro frontal neutro y rostro 3/4 para identidad facial.\n2) Fotos naturales para presencia real, gestos y textura.\n3) Cuerpo completo para complexión y proporciones.\n4) Referencia de pelo para corte, volumen y color actual.\n\nREFERENCIAS INCLUIDAS\n${refs}\n\nDATOS MANUALES\n- Ojos: ${attrs.eyes || 'no indicado'}\n- Piel: ${attrs.skin || 'no indicado'}\n- Pelo color: ${attrs.hairColor || 'no indicado'}\n- Pelo estilo: ${attrs.hairStyle || 'no indicado'}\n- Vello facial: ${attrs.beard || 'no indicado'}\n- Altura / complexión: ${attrs.build || 'no indicado'}\n- Rasgos distintivos: ${attrs.marks || 'no indicado'}\n\nMEDIDAS FACIALES NORMALIZADAS\n${measuresTxt}\n\nEXCLUIR O NO COPIAR\n${attrs.exclude || 'No copiar ropa, fondo, accesorios accidentales, sombras raras ni deformaciones de una foto específica.'}\n\nINSTRUCCIONES DE IDENTIDAD\n- Mantener la estructura de ojos, cejas, nariz, boca, mandíbula, frente y proporción general del rostro.\n- Mantener complexión corporal y postura natural sin exagerar musculatura ni adelgazar/ensanchar el cuerpo.\n- No inventar rasgos nuevos.\n- No fusionar con otra persona.\n- Evitar el efecto “parecido a un primo”: priorizar la identidad de las fotos adjuntas por encima de descripciones genéricas.\n- Si una referencia contradice a otra, priorizar las de mayor calidad y las asignadas como rostro frontal neutro, 3/4 y natural.\n\nResultado esperado: imagen fotorrealista de la misma persona, con identidad facial y corporal consistente, sin copiar necesariamente ropa ni fondo.`;
-  }
+Evitar:
+- Selfie ultra cerca con gran angular.
+- Filtros, belleza automática, IA previa o piel suavizada.
+- Sombras duras, gorra, lentes oscuros, mano tapando cara.
+- Fotos viejas con peso/corte de pelo muy distinto si no representan la identidad actual.
 
-  function getAttrs(){
-    return {eyes:$('eyes').value.trim(),skin:$('skin').value.trim(),hairColor:$('hairColor').value.trim(),hairStyle:$('hairStyle').value.trim(),beard:$('beard').value.trim(),build:$('build').value.trim(),marks:$('marks').value.trim(),exclude:$('exclude').value.trim()};
-  }
-
-  function updateReport(){
-    els.report.value = JSON.stringify(buildReport(), null, 2);
-  }
-
-  function buildReport(){
-    return {
-      format:'IDENTITY_DOSSIER_REPORT', version:'1.0-mvp', created:new Date().toISOString(),
-      totals:{photos:state.items.length, good:state.items.filter(i=>i.quality.score>=72).length, assigned:state.items.filter(i=>i.role).length},
-      attributes:getAttrs(),
-      references:Object.fromEntries(state.items.filter(i=>i.role).map(i=>[i.role,{file:i.name,score:i.quality.score,tags:i.tags}])),
-      photos:state.items.map(i=>({id:i.id,file:i.name,role:i.role||null,quality:i.quality,image:i.image,face:i.face?{angle:i.face.angle,smile:i.face.smile,noseOffset:i.face.noseOffset,box:i.face.box}:null,pose:i.pose?{visible:i.pose.visible,hasFullBody:i.pose.hasFullBody,shoulderW:i.pose.shoulderW,hipW:i.pose.hipW}:null,measurements:i.measurements}))
-    };
-  }
+Regla clave: variedad real > cantidad repetida. 70 fotos casi iguales sirven menos que 35 bien variadas.`; }
 
   async function downloadZip(){
-    if(!state.items.length){alert('Primero cargá fotos.');return;}
-    setPrompt(); updateReport();
-    const zip = new JSZip();
-    zip.file('manifest.json', JSON.stringify(buildReport(), null, 2));
-    zip.file('prompt_chatgpt.txt', els.prompt.value);
-    zip.file('quality_report.json', els.report.value);
-    zip.file('README.txt', 'Dossier visual creado con Identity Dossier Builder. Para mejores resultados, adjuntar las imágenes de /refs junto con prompt_chatgpt.txt. Las mediciones no sustituyen a las fotos.');
-    const refsFolder=zip.folder('refs'), originals=zip.folder('originals'), analysis=zip.folder('analysis'), crops=zip.folder('crops');
+    if(!state.items.length){ alert('Primero cargá fotos.'); return; } setPrompt(); updateReport(); const zip=new JSZip(); const report=buildReport();
+    zip.file('manifest.json', JSON.stringify(report,null,2)); zip.file('prompt_chatgpt.txt', els.prompt.value); zip.file('quality_report.json', JSON.stringify(report.photos,null,2)); zip.file('validation_report.json', JSON.stringify(report.readiness,null,2)); zip.file('identity_profile.json', JSON.stringify(report.identity_profile,null,2)); zip.file('identity_map.json', JSON.stringify({readiness:report.readiness, identity_profile:report.identity_profile, references:report.references},null,2)); zip.file('capture_protocol.txt', captureProtocolText());
+    zip.file('README.txt', `Clone Dossier MAX\n\n1) Para usarlo en ChatGPT, adjuntá este ZIP o las imágenes de /refs junto con prompt_chatgpt.txt.\n2) La carpeta /refs contiene las mejores referencias seleccionadas.\n3) /analysis contiene landmarks, mediciones y perfil promedio.\n4) /crops contiene recortes normalizados de cara/cuerpo.\n5) Ningún JSON garantiza identidad perfecta: las fotos son la referencia principal.\n`);
+    const refs=zip.folder('refs'), originals=zip.folder('originals'), analysis=zip.folder('analysis'), crops=zip.folder('crops'), best=zip.folder('best_unassigned_top'), rejects=zip.folder('rejects_low_quality');
     for(const item of state.items){ originals.file(safeName(item.name), item.file); }
-    const assigned=state.items.filter(i=>i.role);
-    for(const item of assigned){ refsFolder.file(safeName(item.role)+'.jpg', await imageBlob(item, 1800, .93)); }
-    const faceAnalysis = Object.fromEntries(state.items.filter(i=>i.face).map(i=>[i.role||i.name,{landmarks:i.face.landmarks,blendshapes:i.face.blendshapes,measurements:i.measurements,angle:i.face.angle,box:i.face.box}]));
-    const poseAnalysis = Object.fromEntries(state.items.filter(i=>i.pose).map(i=>[i.role||i.name,{landmarks:i.pose.landmarks,worldLandmarks:i.pose.worldLandmarks,summary:{visible:i.pose.visible,hasFullBody:i.pose.hasFullBody,shoulderW:i.pose.shoulderW,hipW:i.pose.hipW}}]));
-    analysis.file('face_landmarks.json', JSON.stringify(faceAnalysis,null,2));
-    analysis.file('pose_landmarks.json', JSON.stringify(poseAnalysis,null,2));
-    analysis.file('face_measurements.json', JSON.stringify(Object.fromEntries(state.items.filter(i=>i.measurements).map(i=>[i.role||i.name,i.measurements])),null,2));
-    for(const item of assigned.filter(i=>i.face).slice(0,10)){ const crop = await faceCropBlob(item); if(crop) crops.file('face_crop_'+safeName(item.role||item.name)+'.jpg', crop); }
-    const sheet = await makeContactSheetBlob(); if(sheet) zip.file('contact_sheet.png', sheet);
-    updateProgress(0,1,'comprimiendo zip');
-    const blob = await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}}, meta=>{els.progressBar.style.width=(meta.percent||0)+'%';els.progressText.textContent='Generando ZIP: '+Math.round(meta.percent||0)+'%';});
-    downloadBlob(blob,'identity_dossier.zip');
-    updateProgress(state.items.length,state.items.length,'zip listo');
+    for(const item of state.items.filter(i=>!i.role&&i.quality.score>=78).sort((a,b)=>b.quality.score-a.quality.score).slice(0,20)){ best.file(safeName(item.name), await imageBlob(item,2000,.94)); }
+    for(const item of state.items.filter(i=>i.quality.score<42).slice(0,30)){ rejects.file(safeName(item.name), await imageBlob(item,1400,.86)); }
+    const assigned=state.items.filter(i=>i.role).sort((a,b)=>a.role.localeCompare(b.role));
+    for(const item of assigned){ refs.file(safeName(item.role)+'.jpg', await imageBlob(item, 2000, .94)); }
+    const faceAnalysis=Object.fromEntries(state.items.filter(i=>i.face).map(i=>[i.role||i.name,{file:i.name,landmarks:i.face.landmarks,blendshapes:i.face.blendshapes,matrixes:i.face.matrixes,measurements:i.measurements,angle:i.face.angle,box:i.face.box,quality:i.quality}]));
+    const poseAnalysis=Object.fromEntries(state.items.filter(i=>i.pose).map(i=>[i.role||i.name,{file:i.name,landmarks:i.pose.landmarks,worldLandmarks:i.pose.worldLandmarks,summary:{visible:i.pose.visible,hasFullBody:i.pose.hasFullBody,shoulderW:i.pose.shoulderW,hipW:i.pose.hipW,sideScore:i.pose.sideScore,bodyBox:i.pose.bodyBox},measurements:i.bodyMeasurements,quality:i.quality}]));
+    analysis.file('face_landmarks.json', JSON.stringify(faceAnalysis,null,2)); analysis.file('pose_landmarks.json', JSON.stringify(poseAnalysis,null,2)); analysis.file('face_measurements.json', JSON.stringify(Object.fromEntries(state.items.filter(i=>i.measurements).map(i=>[i.role||i.name,i.measurements])),null,2)); analysis.file('body_measurements.json', JSON.stringify(Object.fromEntries(state.items.filter(i=>i.bodyMeasurements).map(i=>[i.role||i.name,i.bodyMeasurements])),null,2)); analysis.file('fingerprints.json', JSON.stringify(Object.fromEntries(state.items.map(i=>[i.role||i.name,i.fingerprint])),null,2));
+    for(const item of assigned.filter(i=>i.face).slice(0,16)){ const crop=await cropBlob(item,'face'); if(crop) crops.file('face_'+safeName(item.role||item.name)+'.jpg', crop); }
+    for(const item of assigned.filter(i=>i.pose?.hasFullBody).slice(0,10)){ const crop=await cropBlob(item,'body'); if(crop) crops.file('body_'+safeName(item.role||item.name)+'.jpg', crop); }
+    const sheet=await makeContactSheetBlob(); if(sheet) zip.file('contact_sheet.png', sheet);
+    updateProgress(0,100,'comprimiendo zip'); const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}},meta=>{els.progressBar.style.width=(meta.percent||0)+'%'; els.progressText.textContent='Generando ZIP: '+Math.round(meta.percent||0)+'%';}); downloadBlob(blob,'clone_dossier_MAX.zip'); updateProgress(state.items.length,state.items.length,'zip listo'); showToast('ZIP descargado');
   }
 
-  async function downloadContactSheet(){
-    const blob = await makeContactSheetBlob();
-    if(!blob){alert('No hay referencias para crear hoja.');return;}
-    downloadBlob(blob,'contact_sheet.png');
-  }
+  async function downloadContactSheet(){ const blob=await makeContactSheetBlob(); if(!blob){alert('No hay referencias asignadas.');return;} downloadBlob(blob,'contact_sheet.png'); }
+  async function makeContactSheetBlob(){ const items=state.items.filter(i=>i.role).sort((a,b)=>a.role.localeCompare(b.role)).slice(0,20); if(!items.length) return null; const cols=4, cellW=380, cellH=510, gap=18, pad=30, head=120, rows=Math.ceil(items.length/cols); const canvas=document.createElement('canvas'); canvas.width=pad*2+cols*cellW+gap*(cols-1); canvas.height=head+pad+rows*cellH+gap*(rows-1)+pad; const c=canvas.getContext('2d'); c.fillStyle='#06080d'; c.fillRect(0,0,canvas.width,canvas.height); c.fillStyle='#38e6b5'; c.font='900 32px ui-monospace, monospace'; c.fillText('CLONE DOSSIER MAX · REFERENCES',pad,50); c.fillStyle='#91a2b9'; c.font='15px ui-monospace, monospace'; c.fillText(`${new Date().toLocaleString('es-UY')} · ${items.length} referencias · readiness ${readiness().score}%`,pad,80); c.fillText(`Alias: ${getAttrs().alias||'sin nombre'}`,pad,104); for(let idx=0; idx<items.length; idx++){ const item=items[idx], img=await loadImage(item.url), col=idx%cols, row=Math.floor(idx/cols), x=pad+col*(cellW+gap), y=head+pad+row*(cellH+gap); c.fillStyle='#0f1724'; c.fillRect(x,y,cellW,cellH); c.strokeStyle='#26364f'; c.strokeRect(x,y,cellW,cellH); coverDraw(c,img,x+10,y+10,cellW-20,cellH-86); c.fillStyle='#dfe9f6'; c.font='800 18px Arial'; c.fillText(roleLabel(item.role).slice(0,38),x+14,y+cellH-50); c.fillStyle='#91a2b9'; c.font='12px ui-monospace, monospace'; c.fillText(`score ${item.quality.score} · ${item.tags.join(', ').slice(0,48)}`,x+14,y+cellH-27); c.fillStyle='#607088'; c.fillText(item.name.slice(0,48),x+14,y+cellH-10); } return new Promise(res=>canvas.toBlob(res,'image/png')); }
 
-  async function makeContactSheetBlob(){
-    const items=state.items.filter(i=>i.role).slice(0,16);
-    if(!items.length) return null;
-    const cellW=360, cellH=480, gap=18, pad=28, head=100, cols=4, rows=Math.ceil(items.length/cols);
-    const canvas=document.createElement('canvas'); canvas.width=pad*2+cols*cellW+gap*(cols-1); canvas.height=head+pad+rows*cellH+gap*(rows-1)+pad;
-    const c=canvas.getContext('2d'); c.fillStyle='#070a10'; c.fillRect(0,0,canvas.width,canvas.height);
-    c.fillStyle='#38e6b5'; c.font='800 30px ui-monospace, monospace'; c.fillText('IDENTITY DOSSIER · REFERENCES', pad, 48);
-    c.fillStyle='#8a9ab0'; c.font='15px ui-monospace, monospace'; c.fillText(new Date().toLocaleString('es-UY')+' · '+items.length+' referencias seleccionadas', pad, 76);
-    for(let idx=0;idx<items.length;idx++){
-      const item=items[idx], img=await loadImage(item.url); const col=idx%cols,row=Math.floor(idx/cols), x=pad+col*(cellW+gap), y=head+pad+row*(cellH+gap);
-      c.fillStyle='#101826'; c.fillRect(x,y,cellW,cellH); c.strokeStyle='#243247'; c.strokeRect(x,y,cellW,cellH);
-      coverDraw(c,img,x+10,y+10,cellW-20,cellH-72);
-      c.fillStyle='#d8e3f1'; c.font='700 18px Arial'; c.fillText(roleLabel(item.role).slice(0,34), x+14, y+cellH-38);
-      c.fillStyle='#8a9ab0'; c.font='12px ui-monospace, monospace'; c.fillText('score '+item.quality.score+' · '+(item.tags.join(', ').slice(0,44)), x+14, y+cellH-17);
-    }
-    return new Promise(res=>canvas.toBlob(res,'image/png'));
-  }
+  async function imageBlob(item,max=2000,quality=.92){ const img=await loadImage(item.url); const s=Math.min(max/img.naturalWidth,max/img.naturalHeight,1); const canvas=document.createElement('canvas'); canvas.width=Math.round(img.naturalWidth*s); canvas.height=Math.round(img.naturalHeight*s); canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height); return new Promise(res=>canvas.toBlob(res,'image/jpeg',quality)); }
+  async function cropBlob(item,type){ const img=await loadImage(item.url); let box=null; if(type==='face'&&item.face) box=item.face.box; if(type==='body'&&item.pose?.bodyBox) box=item.pose.bodyBox; if(!box) return null; const pad=type==='face'?.28:.10; let x=(box.x-pad*box.w)*img.naturalWidth, y=(box.y-pad*box.h)*img.naturalHeight, w=box.w*(1+pad*2)*img.naturalWidth, h=box.h*(1+pad*2)*img.naturalHeight; x=Math.max(0,x); y=Math.max(0,y); w=Math.min(img.naturalWidth-x,w); h=Math.min(img.naturalHeight-y,h); const canvas=document.createElement('canvas'); canvas.width=type==='face'?900:900; canvas.height=type==='face'?1100:1400; const c=canvas.getContext('2d'); c.fillStyle='#111'; c.fillRect(0,0,canvas.width,canvas.height); coverDraw(c,img,0,0,canvas.width,canvas.height,{sx:x,sy:y,sw:w,sh:h}); return new Promise(res=>canvas.toBlob(res,'image/jpeg',.94)); }
+  function coverDraw(c,img,x,y,w,h,crop=null){ if(crop){c.drawImage(img,crop.sx,crop.sy,crop.sw,crop.sh,x,y,w,h);return;} const ar=img.naturalWidth/img.naturalHeight, br=w/h; let sx=0,sy=0,sw=img.naturalWidth,sh=img.naturalHeight; if(ar>br){sw=img.naturalHeight*br;sx=(img.naturalWidth-sw)/2;} else {sh=img.naturalWidth/br;sy=(img.naturalHeight-sh)/2;} c.drawImage(img,sx,sy,sw,sh,x,y,w,h); }
 
-  async function imageBlob(item,max=1800,quality=.92){
-    const img=await loadImage(item.url); const s=Math.min(max/img.naturalWidth,max/img.naturalHeight,1);
-    const canvas=document.createElement('canvas'); canvas.width=Math.round(img.naturalWidth*s); canvas.height=Math.round(img.naturalHeight*s);
-    canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
-    return new Promise(res=>canvas.toBlob(res,'image/jpeg',quality));
-  }
+  async function estimateImageStats(img){ const max=256, s=Math.min(max/img.naturalWidth,max/img.naturalHeight,1); const canvas=document.createElement('canvas'); canvas.width=Math.max(1,Math.round(img.naturalWidth*s)); canvas.height=Math.max(1,Math.round(img.naturalHeight*s)); const c=canvas.getContext('2d',{willReadFrequently:true}); c.drawImage(img,0,0,canvas.width,canvas.height); const data=c.getImageData(0,0,canvas.width,canvas.height).data, w=canvas.width,h=canvas.height; let sum=0,sumSq=0,lapSum=0,lapSq=0,n=0; const grayAt=(x,y)=>{const i=(y*w+x)*4; return .299*data[i]+.587*data[i+1]+.114*data[i+2];}; for(let y=1;y<h-1;y+=2){for(let x=1;x<w-1;x+=2){const g=grayAt(x,y); sum+=g; sumSq+=g*g; const lap=grayAt(x,y-1)+grayAt(x,y+1)+grayAt(x-1,y)+grayAt(x+1,y)-4*g; lapSum+=lap; lapSq+=lap*lap; n++;}} const mean=sum/n, variance=sumSq/n-mean*mean, lapMean=lapSum/n, sharp=lapSq/n-lapMean*lapMean; return {brightness:+(mean/255).toFixed(3),contrast:+(Math.sqrt(Math.max(0,variance))/128).toFixed(3),sharpness:+sharp.toFixed(2),dhash:await dHash(img)}; }
+  async function dHash(img){ const canvas=document.createElement('canvas'); canvas.width=9; canvas.height=8; const c=canvas.getContext('2d',{willReadFrequently:true}); c.drawImage(img,0,0,9,8); const d=c.getImageData(0,0,9,8).data; let bits=''; for(let y=0;y<8;y++){ for(let x=0;x<8;x++){ const i=(y*9+x)*4, j=(y*9+x+1)*4; const a=.299*d[i]+.587*d[i+1]+.114*d[i+2], b=.299*d[j]+.587*d[j+1]+.114*d[j+2]; bits+=a>b?'1':'0'; }} let hex=''; for(let i=0;i<bits.length;i+=4) hex+=parseInt(bits.slice(i,i+4),2).toString(16); return hex; }
 
-  async function faceCropBlob(item){
-    if(!item.face) return null;
-    const img=await loadImage(item.url); const b=item.face.box;
-    const pad=.22; let x=(b.x-pad*b.w)*img.naturalWidth, y=(b.y-pad*b.h)*img.naturalHeight, w=b.w*(1+pad*2)*img.naturalWidth, h=b.h*(1+pad*2)*img.naturalHeight;
-    x=Math.max(0,x); y=Math.max(0,y); w=Math.min(img.naturalWidth-x,w); h=Math.min(img.naturalHeight-y,h);
-    const canvas=document.createElement('canvas'); canvas.width=720; canvas.height=900; const c=canvas.getContext('2d'); c.fillStyle='#111'; c.fillRect(0,0,720,900); coverDraw(c,img,0,0,720,900,{sx:x,sy:y,sw:w,sh:h});
-    return new Promise(res=>canvas.toBlob(res,'image/jpeg',.94));
-  }
-
-  function coverDraw(c,img,x,y,w,h,crop=null){
-    if(crop){c.drawImage(img,crop.sx,crop.sy,crop.sw,crop.sh,x,y,w,h);return;}
-    const ar=img.naturalWidth/img.naturalHeight, br=w/h; let sx=0,sy=0,sw=img.naturalWidth,sh=img.naturalHeight;
-    if(ar>br){sw=img.naturalHeight*br;sx=(img.naturalWidth-sw)/2;} else {sh=img.naturalWidth/br;sy=(img.naturalHeight-sh)/2;}
-    c.drawImage(img,sx,sy,sw,sh,x,y,w,h);
-  }
-
-  async function estimateSharpness(img){
-    const max=240, s=Math.min(max/img.naturalWidth,max/img.naturalHeight,1);
-    const canvas=document.createElement('canvas'); canvas.width=Math.max(1,Math.round(img.naturalWidth*s)); canvas.height=Math.max(1,Math.round(img.naturalHeight*s));
-    const c=canvas.getContext('2d',{willReadFrequently:true}); c.drawImage(img,0,0,canvas.width,canvas.height);
-    const data=c.getImageData(0,0,canvas.width,canvas.height).data; const w=canvas.width,h=canvas.height; let sum=0,sumSq=0,n=0;
-    const gray=(idx)=>0.299*data[idx]+0.587*data[idx+1]+0.114*data[idx+2];
-    for(let y=1;y<h-1;y+=2){for(let x=1;x<w-1;x+=2){const i=(y*w+x)*4; const lap=gray(i-w*4)+gray(i+w*4)+gray(i-4)+gray(i+4)-4*gray(i); sum+=lap; sumSq+=lap*lap; n++;}}
-    const mean=sum/n; return +(sumSq/n-mean*mean).toFixed(2);
-  }
-
-  function updateProgress(done,total,label){
-    const pct=total?Math.round(done/total*100):0; els.progressBar.style.width=pct+'%'; els.progressText.textContent=label ? `${label}: ${done}/${total}` : `${done}/${total}`;
-  }
+  function updateProgress(done,total,label){ const pct=total?Math.round(done/total*100):0; els.progressBar.style.width=pct+'%'; els.progressText.textContent=label?`${label}: ${done}/${total}`:`${done}/${total}`; }
   function loadImage(src){return new Promise((res,rej)=>{const img=new Image(); img.onload=()=>res(img); img.onerror=rej; img.src=src;});}
   function midpoint(a,b){return {x:(a.x+b.x)/2,y:(a.y+b.y)/2,z:((a.z||0)+(b.z||0))/2};}
-  function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
-  function delay(ms){return new Promise(r=>setTimeout(r,ms));}
-  function escapeHtml(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
-  function safeName(s){return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,80) || 'file';}
-  function downloadBlob(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),3000);}
-  async function copyText(text){try{return await navigator.clipboard.writeText(text);}catch(e){const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();}}
-  function showTab(tab){
-    document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
-    $('panelPrompt').classList.toggle('hidden',tab!=='prompt'); $('panelReport').classList.toggle('hidden',tab!=='report'); $('panelRefs').classList.toggle('hidden',tab!=='refs');
-    if(tab==='report') updateReport(); if(tab==='prompt') setPrompt(); if(tab==='refs') renderRefs();
-  }
+  function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);} function delay(ms){return new Promise(r=>setTimeout(r,ms));}
+  function escapeHtml(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+  function safeName(s){return String(s||'file').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,90)||'file';}
+  function downloadBlob(blob,name){const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),3000);} async function copyText(text){try{return await navigator.clipboard.writeText(text);}catch(e){const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();}}
+  function showTab(tab){ document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab)); $('panelPrompt').classList.toggle('hidden',tab!=='prompt'); $('panelReport').classList.toggle('hidden',tab!=='report'); $('panelValidation').classList.toggle('hidden',tab!=='validation'); $('panelRefs').classList.toggle('hidden',tab!=='refs'); if(tab==='report') updateReport(); if(tab==='prompt') setPrompt(); if(tab==='refs') renderRefs(); if(tab==='validation') renderReadiness(); }
+  function showToast(text){ els.toast.textContent=text; els.toast.classList.add('show'); setTimeout(()=>els.toast.classList.remove('show'),1500); }
 </script>
 </body>
 </html>
